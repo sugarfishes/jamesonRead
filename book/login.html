@@ -1,0 +1,230 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <meta name="format-detection" content="telephone=no,email=no,date=no,address=no">
+    <link rel="stylesheet" type="text/css" href="../css/aui.2.0.css" />
+    <link rel="stylesheet" type="text/css" href="../css/font-awesome.min.css" />
+    <style type="text/css">
+      #loginbutton { position: fixed;bottom: 3rem;left: 0;right: 0;}
+      #main .aui-btn-sm{ margin:auto; width: 80%;border-radius: 20px;} 
+      #topimg {margin:2rem auto 1rem;}
+      #main .subtitle {font-size:12px;color: #999;}
+      #luntanzhanghao { position: fixed;bottom: 1.2rem;left: 0;right: 0;}
+      body { background-color:#fff;}
+      #header { position: fixed;}
+    </style>
+</head>
+<body>
+<header class="aui-bar aui-bar-nav" id="header">
+    <a class="aui-pull-left aui-btn" tapmode onclick="back()">
+        <span class="aui-iconfont aui-icon-left"></span>
+    </a>
+    <div class="aui-title">登录</div>
+</header>
+<div id="main">
+    <div id="topimg" class="aui-text-center">
+        <img src="../image/kuashebei.png" style="width:95%;" alt="">
+    </div>
+    <h1 class="aui-text-center aui-font-size-20">登录西风云阅读</h1>
+    <p class="aui-text-center subtitle">同步云书架、阅读进度、跨设备无缝体验</p>
+    <div id="loginbutton" class="aui-row aui-margin-b-15">
+        <div class="aui-col-xs-6 aui-text-center">
+            <div tapmode onclick="checkinstall('qq')" class="aui-btn aui-btn-primary aui-btn-block aui-btn-sm">QQ登录</div>
+        </div>
+        <div class="aui-col-xs-6 aui-text-center">
+           <div tapmode onclick="checkinstall('wx')" class="aui-btn aui-btn-success aui-btn-block aui-btn-sm">微信登录</div>
+        </div>
+    </div>
+    <div id="luntanzhanghao" class="aui-content-padded aui-text-primary aui-margin-t-10 aui-text-center aui-font-size-14 "  tapmode onclick="loginwithforum()">
+    	<span class="">帐号/手机号登录 </span>
+    	<span class="aui-margin-l-5">注册</span>
+    </div>
+</div>
+</body>
+<script type="text/javascript" src="../script/api.js"></script>
+<script type="text/javascript" src="../script/dot.js"></script>
+<script type="text/javascript">
+var indexSetting = $api.getStorage('appinfo');
+indexSetting.userinfo = $api.getStorage('userinfo');
+indexSetting.guanzhuinfo = $api.getStorage('guanzhuinfo')?$api.getStorage('guanzhuinfo'):(new Array());
+  apiready = function(){
+      api.parseTapmode();
+      $api.fixStatusBar( $api.dom('header') );
+      $api.css($api.byId('main'),'margin-top:'+$api.offset($api.dom('header')).h+'px');
+      indexSetting.from = api.pageParam.from;
+      indexSetting.book_id = api.pageParam.book_id;
+      indexSetting.activity = api.require('UILoading');
+      api.addEventListener({
+    	    name: 'keyback'
+    	}, function(ret, err) {
+    	    if(ret){
+    	    	back();
+    	    }
+    	});        
+  };
+
+  function loginwithforum(){
+    api.openFrame({
+        name: 'regit',
+        url: './regit.html',
+        rect: {
+            x: 0,
+            y: 0,
+            w: 'auto',
+            h: 'auto'
+        },
+        pageParam: {
+            book_id:indexSetting.book_id,
+            from:indexSetting.from
+        },
+        bounces: false
+    });
+  }
+    function checkinstall (type) {
+        if(type=='qq'){
+            indexSetting.qq = api.require('qq');
+            indexSetting.qq.installed(function(ret,err){
+                if(ret.status){
+                   api.toast({
+                      msg: '正在打开QQ',
+                      duration: 1000,
+                      location: 'top'
+                    });
+                   loginwithqq();
+                }else{
+                    api.toast({
+                      msg: '本机没有安装QQ',
+                      duration: 3000,
+                      location: 'top'
+                    });
+                } 
+            });
+        }else{
+            indexSetting.wx = api.require('wx');
+            indexSetting.wx.isInstalled(function(ret,err){
+                if(ret.installed){
+                    api.toast({
+                      msg: '暂未开通此功能',
+                      duration: 3000,
+                      location: 'top'
+                    });
+                    return;
+                   api.toast({
+                      msg: '正在打开微信',
+                      duration: 1000,
+                      location: 'top'
+                    });
+                   loginwithwx();
+                }else{
+                    api.toast({
+                      msg: '本机没有安装微信',
+                      duration: 3000,
+                      location: 'top'
+                    });
+                } 
+            });
+        }
+    }
+    function loginwithqq(){
+        indexSetting.qq.login(function(ret,err){
+            if(ret.status){
+                var updateuserinfo = $api.getStorage('userinfo');
+                updateuserinfo.uid = updateuserinfo.qqopenid = ret.openId;
+                updateuserinfo.access=ret.accessToken;
+                indexSetting.qq.getUserInfo(function(ret2,err2) {
+                   if (ret2.status) {
+                      indexSetting.avatar  = updateuserinfo.avatar = ret2.info.figureurl_qq_2;  
+                      updateuserinfo.gender = ret2.info.gender;  
+                      updateuserinfo.qqname = updateuserinfo.name = ret2.info.nickname;  
+                      updateuserinfo.trameid = indexSetting.trameid;
+                      updateuserinfo.trametitle = indexSetting.trametitle;
+                      updateuserinfo.tramefield = indexSetting.tramefield;
+                      updateuserinfo.dstrameid = indexSetting.dstrameid;
+                      updateuserinfo.dstrametitle = indexSetting.dstrametitle;
+                      updateuserinfo.dstramefield = indexSetting.dstramefield;
+                      updateuserinfo.dqlogintype = 'qq';
+                      // 判断是否绑定过帐号
+                      api.ajax({
+                        url: indexSetting.url+'api.php?appkey='+indexSetting.appkey+'&type=get&module=withotherlogin&param=logintype----qq,openid----'+ret.openId,
+                          method: 'get'
+                      }, function(retbind, errbind) {
+                        if(retbind && retbind.status){
+                            updateuserinfo.dstramenums = retbind.data.dstramenums;
+                            updateuserinfo.tramenums = retbind.data.tramenums;
+                            updateuserinfo.group = retbind.data.group;  
+                            updateuserinfo.bbsuid = retbind.data.bbsuid;
+                            updateuserinfo.forumname = retbind.data.forumname;
+                            updateuserinfo.dqlogintype = 'qq';
+                            updateuserinfo.name = ret2.info.nickname;
+                        }else{
+                            updateuserinfo.dstramenums = 0;
+                            updateuserinfo.tramenums = 0;
+                            updateuserinfo.group = updateuserinfo.trametitle+':'+updateuserinfo.tramenums;  
+                            updateuserinfo.bbsuid = 0;
+                        }
+                        $api.setStorage('userinfo',updateuserinfo);
+                        indexSetting.userinfo = updateuserinfo;
+                      });
+                      api.toast({
+                          msg: '登录成功',
+                          duration: 2000,
+                          location: 'bottom'
+                      });
+                      api.execScript({
+                          name: 'root',
+                          frameName: 'store',
+                          script: "indexSetting.userinfo = $api.getStorage('userinfo');api.refreshHeaderLoading();$api.attr($api.byId('avatar'),'src','"+ret2.info.figureurl_qq_2+"')"
+                         });
+                      if(indexSetting.from == 'book'){
+                          api.execScript({
+                            name: 'book_'+indexSetting.book_id,
+                            script: "indexSetting.userinfo=$api.getStorage('userinfo');api.refreshHeaderLoading();"
+                          });
+                      }else if(indexSetting.from =='read'){
+                      	api.execScript({
+                            name: indexSetting.from,
+                            script: "indexSetting.userinfo=$api.getStorage('userinfo');"
+                          });
+                      }else{
+                          api.execScript({
+                            name: indexSetting.from,
+                            script: "indexSetting.userinfo=$api.getStorage('userinfo');api.refreshHeaderLoading();"
+                          });
+                      }
+                      back();
+                   }else{
+                      api.toast({
+                          msg: err2.msg,
+                          duration: 2000,
+                          location: 'bottom'
+                      });
+                   }
+                });
+            }else{
+                api.toast({
+                    msg: '登录失败请重试',
+                    duration: 2000,
+                    location: 'bottom'
+                });
+            }
+        });
+    }
+    function loginwithwx(){}
+//合并关注信息
+function hebingguanzhu(bbsuid){
+	if(indexSetting.guanzhuinfo.length && (bbsuid > 0)){
+		var local = indexSetting.guanzhuinfo.join('__');
+		api.ajax({
+		    url: indexSetting.url+'api.php?appkey='+indexSetting.appkey+'&type=get&module=hebingguanzhu&param=bbsuid----'+bbsuid+',local----'+local,
+		    method: 'get'
+		}, function(ret, err) {
+			if(ret.status){
+				$api.setStorage('guanzhuinfo',ret.data);
+			}
+		});
+	}
+}
+</script>
+</html>

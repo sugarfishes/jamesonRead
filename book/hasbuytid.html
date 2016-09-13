@@ -1,0 +1,244 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <meta name="format-detection" content="telephone=no,email=no,date=no,address=no">
+    <link rel="stylesheet" type="text/css" href="../css/aui.2.0.css" />
+    <link rel="stylesheet" type="text/css" href="../css/font-awesome.min.css" />
+    <style type="text/css">
+      .aui-list .aui-list-item-media img { height: 95px;}
+      #main { }
+      #header { position: fixed;z-index: 9999;}
+      .aui-info-item .aui-label { margin-left: 0.2rem;}
+      #main .aui-list::after, #main .aui-list::before, #main .aui-list-item::after, #main .aui-list-item::before { height: 0;}
+    </style>
+</head>
+<body>
+<header class="aui-bar aui-bar-nav" id="header">
+    <a class="aui-pull-left aui-btn" tapmode onclick="back()">
+        <span class="aui-iconfont aui-icon-left"></span>
+    </a>
+    <div class="aui-title" id="title">我购买的章节</div>
+    <a class="aui-pull-right aui-btn" tapmode onclick="opensearch()">
+        <span class="aui-iconfont aui-icon-search"></span>
+    </a>
+</header>
+<div id="main">
+    <ul class="aui-list " id="indexlist"></ul>
+    <div id="loading" class="aui-hide aui-text-center"><span class="fa-2x fa fa-spinner fa-spin"></span></div>
+</div>
+<script id="indexlist-temp" type="text/x-dot-template">
+{{? it.data}}
+    {{ for(var i=0,len=it.data.length;i<len;i++) { }}
+        <li class="aui-list-item aui-margin-b-5" tapmode onclick="openzhangjie({{=it.data[i].book_id}},{{=it.data[i].colum_id}},'{{=it.data[i].zhangjie}}','{{=it.data[i].subject}}',{{=it.data[i].price}},'{{=it.data[i].book_name}}')">
+            <div class="aui-list-item-inner">
+                <div class="aui-list-item-title">{{=it.data[i].subject}}</div>
+                <div class="aui-list-item-right aui-text-warning">{{=it.data[i].price}}{{=indexSetting.trametitle}}</div>
+            </div>
+        </li>
+        {{ } }}
+{{??}}
+<li class="aui-list-header">你还没有单独购买的章节</li>
+{{?}}
+</script>
+</body>
+<script type="text/javascript" src="../script/api.js"></script>
+<script type="text/javascript" src="../script/dot.js"></script>
+<script type="text/javascript">
+var indexSetting = $api.getStorage('appinfo');
+indexSetting.userinfo = $api.getStorage('userinfo');
+apiready = function () {
+    $api.fixStatusBar( $api.dom('header') );
+    api.parseTapmode();
+    $api.css($api.byId('main'),'margin-top:'+$api.offset($api.dom('header')).h+'px');
+    api.addEventListener({
+	    name: 'keyback'
+	}, function(ret, err) {
+	    if(ret){
+	    	back();
+	    }
+	});    
+    indexSetting.fs = api.require('fs');
+    indexSetting.activity = api.require('UILoading');
+    indexSetting.activity.keyFrame({
+        rect: {
+            w: 80,
+            h: 80
+        },
+        styles: {
+            bg: 'rgba(0,0,0,0.5)',
+            corner: 15,
+            interval: 50,
+            frame: {
+                w: 80,
+                h: 80
+            }
+        }
+    }, function(ret) {});
+    initload();
+	api.setRefreshHeaderInfo({
+	    visible: true,
+	    bgColor: '#ccc',
+	    textColor: '#fff',
+	    textDown: '下拉刷新...',
+	    textUp: '松开刷新...',
+	    showTime: true
+	}, function(ret, err) {
+        ajaxuser();
+        indexSetting.userinfo = $api.getStorage('userinfo');
+		initload();
+		api.refreshHeaderLoadDone()
+	});
+}
+    
+//  初始化 
+function initload(){
+    if(indexSetting.userinfo.bbsuid){
+    	api.ajax({
+		    url: indexSetting.url+'api.php?appkey='+indexSetting.appkey+'&type=get&module=hasbuytid&param=bbsuid----'+indexSetting.userinfo.bbsuid,
+		    method: 'get'
+		}, function(ret, err) {
+		    if (ret) {
+                if(ret.status){
+    		    	var temp = $api.text($api.byId("indexlist-temp"));
+                    var dottemp = doT.template(temp);
+                    var html = dottemp(ret);
+                    $api.html($api.byId('indexlist'),html);
+                }else{
+                    $api.html($api.byId('loading'),'你还没有单独购买的章节');
+                    $api.removeCls($api.byId('loading'),'aui-hide');
+                }
+		        indexSetting.activity.closeKeyFrame();
+            } else {
+                api.toast({
+                    msg: err.msg,
+                    duration: 2000,
+                    location: 'top'
+                });
+                indexSetting.activity.closeKeyFrame();
+            }
+		});
+    }else{
+        alert('只有在绑定论坛帐号后才可查看');
+        back();
+    }
+}
+
+    //下载
+function down(book_id,colum_id){
+    api.download({
+        url: indexSetting.url+'api.php?appkey='+indexSetting.appkey+'&type=get&module=downbook&param=book_id----'+book_id+',colum_id----'+colum_id,
+        savePath: 'fs://'+book_id+'_'+colum_id+'.txt',
+        report: true,
+        cache: true,
+        allowResume: true
+    }, function(ret, err) {
+        if (ret.state == 1) {
+            indexSetting.download = true;
+            return true;
+        } else if(ret.state==2){
+            api.toast({
+                msg: '下载失败',
+                duration: 2000,
+                location: 'top'
+            });
+            indexSetting.download = false;
+            return false;
+        }
+    });
+}
+//阅读
+function openzhangjie(book_id,colum_id,zhangjie,subject,price,book_name){
+	indexSetting.params = [book_id,colum_id,zhangjie,subject,price,book_name];
+	indexSetting.activity.keyFrame({
+        rect: {
+            w: 80,
+            h: 80
+        },
+        styles: {
+            bg: 'rgba(0,0,0,0.5)',
+            corner: 15,
+            interval: 50,
+            frame: {
+                w: 80,
+                h: 80
+            }
+        }
+    }, function(ret) {});
+    indexSetting.download = 1;
+    indexSetting.fs.exist({
+        path: 'fs://'+book_id+'_'+colum_id+'.txt'
+    },function(ret,err){
+        if(!ret.exist){
+            down(book_id,colum_id);
+        }else{
+            indexSetting.download = true;
+        }
+    });
+    var intval = setInterval(function(){
+        if(indexSetting.download !== 1){
+            clearInterval(intval);
+            checkdownload(book_id,colum_id,zhangjie,subject,price,book_name);
+        }
+    },1000);
+}
+
+
+function checkdownload(book_id,colum_id,zhangjie,subject,price,book_name){
+	indexSetting.fs.getAttribute({
+		    path: 'fs://'+book_id+'_'+colum_id+'.txt'
+		}, function(ret, err) {
+	    if (ret.status) {
+	        if(ret.attribute.size > 1){
+	        	indexSetting.download = true;
+	        }else{
+	        	indexSetting.download = false;
+	        }
+	    } else {
+	        indexSetting.download = false;
+	    }
+	});
+    if(indexSetting.download === true){
+    	indexSetting.activity.closeKeyFrame();
+         api.openWin({
+             name: 'read',
+             url: './read.html',
+             rect: {
+                 x: 0,
+                 y: 0,
+                 w: api.winWidth,
+                 h: api.Height
+             },
+             pageParam: {
+                 book_id: book_id,
+                 book_name:book_name,
+                 image:'',
+                 desco:'',
+                 colum_id:colum_id,
+                 zhangjie:zhangjie,
+                 subject:subject
+             },
+             bgColor:"#F5F5F5",
+             bounces: false,
+             vScrollBarEnabled: true,
+             hScrollBarEnabled: false,
+             animation:{
+                 type:"push",
+                 subType:"from_right",
+                 duration:300
+             },
+             reload:true
+         });    
+     }else{
+        api.toast({
+             msg: '暂无内容',
+             duration: 2000,
+             location: 'top'
+         });
+         indexSetting.activity.closeKeyFrame();
+         return false;
+     }
+}
+</script>
+</html>

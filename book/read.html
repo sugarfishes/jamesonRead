@@ -1,0 +1,885 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <meta name="format-detection" content="telephone=no,email=no,date=no,address=no">
+    <link rel="stylesheet" type="text/css" href="../css/aui.2.0.css" />
+    <link rel="stylesheet" type="text/css" href="../css/font-awesome.min.css" />
+    <style type="text/css">
+        #header, #footer { border: 0; position: fixed;left:0;right:0;background: #000;color: #fff;z-index: 99;}
+        #header .aui-iconfont {top:-0.3rem;}
+        #footer .aui-bar-tab-label {bottom:-0.3rem;}
+        #header_top, #footer_bottom {position:fixed;left:0;right:0;background:transparent;padding:0.1rem 0.6rem;font-size:0.6rem;color:#bbb;}
+        #header_top {top:0;} 
+        #footer_bottom{bottom:0;}
+        body { background: #FFFfee;}
+        #header, #header .aui-btn, #header .aui-title, #footer, #footer .aui-bar-tab-item {1height:30px;1line-height:30px;1min-height:30px;}
+        #main, #setting, #bgcolor {background: #000;color: #fff; position: fixed;bottom: 0;left: 0;right: 0;width: 100%;}
+        #read .aui-range { display: block;margin-bottom:-5px;}
+        #read .aui-range input { display: inline-block;width: 80%;margin-bottom:-3px;}
+
+        #read .aui-list::before, #read .aui-list::after, #read .aui-list-item::before, #read .aui-list-item::after, #read .aui-list-item-inner::after, #read .aui-list-item-inner::before { height: 0;}
+
+        #read .aui-list-item, #read .aui-list-item-inner { background: #000;color: #fff;}
+        #read .aui-range-tip { display: none;}
+        #read .nums { position: absolute;right: 2px;1line-height: 2.2rem;margin-bottom:-2px;font-size: 10px;}
+    
+    	#setting, #main,#bgcolor { margin:0;padding:0;}
+        #setting .fontcolor i { display: inline-block;padding: 0;width:20px;height:16px;margin-right:0.3rem;}
+        #setting .aui-list-item, #setting .aui-list-item-inner {1min-height:30px;1height:30px;1max-height:30px;}
+    </style>
+</head>
+<body id="read">
+	<div id="header_top">
+		<span id="header_time" class="aui-pull-left"></span>
+		<span id="header_opea" class="aui-pull-right"></span>
+	</div>
+	<div id="footer_bottom" class="aui-ellipsis-1">
+		<span class="aui-pull-left" id="book_shuming"></span>
+		<span class="aui-pull-right" id="book_zhangjie"></span>
+	</div>
+    <header class="aui-bar aui-bar-nav aui-hide" id="header">
+        <a class="aui-pull-left aui-btn" onclick="readback()" tapmode>
+            <span class="aui-iconfont aui-icon-left"></span>
+        </a>
+        <a class="aui-pull-right aui-btn" tapmode onclick="share()">
+            <span class="aui-iconfont aui-icon-share"></span>
+        </a>
+    </header>
+    <div id="main" class="aui-hide">
+        <ul class="aui-list aui-form-list">
+            <li class="aui-list-item" >
+                <div class="aui-list-item-inner">
+                    <div class="aui-list-item-input">
+                        <div class="aui-range">
+                           <input type="range" class="aui-range" value="0" max="100" min="1" step="1" id="progress" />
+                            <span id="nums"></span>
+                        </div>
+                    </div>
+                </div>
+            </li>
+        </ul>
+    </div>
+    <div id="setting" class="aui-hide">
+        <ul class="aui-list">
+            <li class="aui-list-item fontcolor">
+               <div class="aui-list-item-inner">    
+               	<div class="aui-list-item-title"> 
+               		<i class="fa fa-font" tapmode onclick="setfont(2)" style="width: auto;">+</i>
+                    <i class="fa fa-font" tapmode onclick="setfont(-2)" style="width: auto;">-</i>
+                    <i tapmode onclick="setcolor('#FAF7ED')" style="color:#FAF7ED;background:#FAF7ED;" class="fa fa-circle"></i>
+                    <i tapmode onclick="setcolor('#E9FAFF')" style="color:#E9FAFF;background:#E9FAFF;" class="fa fa-circle"></i>
+                    <i tapmode onclick="setcolor('#FFFFED')" style="color:#FFFFED;background:#FFFFED;" class="fa fa-circle"></i>
+                    <i tapmode onclick="setcolor('#FCEFFF')" style="color:#FCEFFF;background:#FCEFFF;" class="fa fa-circle"></i>
+                    <i tapmode onclick="setcolor('#000')" style="box-shadow: 0 0 2px #fff;color:#000;background:#000;" class="fa fa-circle"></i>
+                    <i tapmode onclick="setcolor('#fff')" style="color:#fff;background:#fff;" class="fa fa-circle"></i>
+            	</div>
+            </div>
+            </li>
+        </ul>
+    </div>
+     <div id="bgcolor" class="aui-hide">
+        <ul class="aui-list aui-form-list">
+            <li class="aui-list-item">
+                <div   class="aui-list-item-inner">
+                    <div  class="aui-list-item-input">
+                        <div class="aui-range">
+                            <i class="fa fa-sun-o aui-text-default"></i>
+                            <input type="range" class="aui-range" value="0" max="100" min="1" step="1" id="light" />
+                            <i class="fa fa-sun-o aui-text-danger"></i>
+                        </div>
+                    </div>
+                </div>
+            </li>
+        </ul>
+    </div>
+    <footer class="aui-bar aui-bar-tab aui-hide" id="footer">
+        <div class="aui-bar-tab-item" tapmode onclick="openframe('mulu')">
+            <div class="aui-bar-tab-label">目录</div>
+        </div>
+        <div class="aui-bar-tab-item" tapmode onclick="jindu()">
+            <div class="aui-bar-tab-label">进度</div>
+        </div>
+        <div class="aui-bar-tab-item" tapmode onclick="setting()">
+            <div class="aui-bar-tab-label">字体</div>
+        </div>
+        <div class="aui-bar-tab-item" tapmode onclick="beijing()">
+            <div class="aui-bar-tab-label">亮度</div>
+        </div>
+        <div class="aui-bar-tab-item" tapmode onclick="openframe('shuping')">
+            <div class="aui-bar-tab-label">书评</div>
+        </div>
+    </footer>
+</body>
+<script type="text/javascript" src="../script/api.js"></script>
+<script type="text/javascript" src="../script/aui-range.js"></script>
+<script type="text/javascript">
+    var indexSetting = $api.getStorage('appinfo');
+    indexSetting.userinfo = $api.getStorage('userinfo');
+    indexSetting.fontsize = 14;
+    indexSetting.bg = "#ffffee";
+    var thebook = {};
+    apiready = function(){
+        ajaxuser();
+        api.setFullScreen({
+        	fullScreen: true
+    	});
+    	api.parseTapmode();
+    	indexSetting.book_id=api.pageParam.book_id;
+        indexSetting.colum_id = api.pageParam.colum_id;
+        indexSetting.zhangjie = api.pageParam.zhangjie;
+        indexSetting.subject = api.pageParam.subject;
+        indexSetting.price = api.pageParam.price;
+        indexSetting.authorid = api.pageParam.authorid;
+        indexSetting.progress = api.pageParam.progress?api.pageParam.progress:0;
+        thebook.book_name = api.pageParam.book_name;
+        thebook.image = api.pageParam.image;
+        thebook.desco = api.pageParam.desco;
+        indexSetting.bookReader = api.require('bookReader');
+        ajaxhistory(indexSetting.colum_id,indexSetting.zhangjie,indexSetting.subject,indexSetting.price);
+        setbookname(thebook.book_name,indexSetting.subject);
+		getcurrent();
+		$api.text($api.byId('header_opea'),api.operator);
+        api.addEventListener({
+		    name: 'keyback'
+		}, function(ret, err) {
+		    if(ret){
+		    	readback();
+		    }
+		});        
+		indexSetting.activity = api.require('UILoading');
+	    indexSetting.activity.keyFrame({
+	        rect: {
+	            w: 80,
+	            h: 80
+	        },
+	        styles: {
+	            bg: 'rgba(0,0,0,0.5)',
+	            corner: 15,
+	            interval: 50,
+	            frame: {
+	                w: 80,
+	                h: 80
+	            }
+	        }
+	    }, function(ret) {});
+		//加载阅读器 start
+		
+        indexSetting.userinfo = $api.getStorage('userinfo');
+		
+		if(indexSetting.progress>0){
+			var config = {
+			   filePath: 'fs://'+indexSetting.book_id+'_'+indexSetting.colum_id+'.txt',
+	           codingType:"utf8",
+	           bg:"#ffffee",
+	           h:api.winHeight-70,
+	           y:30,
+	           textStyle:{
+	                size:16,
+	                color:"#333"
+	           },
+	           progress:indexSetting.progress
+			};
+		}else{
+			var config = {
+			   filePath: 'fs://'+indexSetting.book_id+'_'+indexSetting.colum_id+'.txt',
+	           codingType:"utf8",
+	           bg:"#ffffee",
+	           h:api.winHeight-70,
+	           y:30,
+	           textStyle:{
+	                size:16,
+	                color:"#333"
+	           }
+			};
+		}
+	    indexSetting.bookReader.open(config, function(ret, err){     
+	        if( ret ){
+	        	indexSetting.activity.closeKeyFrame();
+	            switch(ret.eventType){
+	                case 'click':
+	                    if($api.hasCls($api.byId('header'),'aui-hide')){
+	                    	$api.addCls($api.byId("main"),"aui-hide");
+	                    	$api.addCls($api.byId("setting"),"aui-hide");
+	                    	$api.addCls($api.byId("bgcolor"),"aui-hide");
+	                    	$api.removeCls($api.byId("footer"),"aui-hide");
+	                    	$api.removeCls($api.byId("header"),"aui-hide");
+	                    }else{
+	                    	addhide();
+	                    }
+	                break;
+	                case 'page_begin':
+	                    getprev();
+	                    addhide();
+	                break;
+	                case 'page_end':
+	                    getnext();
+	                    addhide();
+	                break;
+	                default:
+	                addhide();
+	                break;
+	            }
+	        }else{
+	            alert(err.msg);
+	        }
+	    });
+//		加载阅读器 end
+    };
+    
+    function ajaxhistory(colum_id,zhangjie,subject,price){
+    	var progress = 0;
+    	indexSetting.bookReader.getProgress({
+		    filePath: 'fs://'+indexSetting.book_id+'_'+colum_id+'.txt'
+		}, function(ret, err) {
+		    if (ret.status) {
+		       progress = ret.progress;
+		    }
+		    if($api.getStorage('history')){
+	             var history = $api.getStorage('history');
+	             for(var i=0,len=history.data.length;i<len;i++){
+	             	if(history.data[i].book_id == indexSetting.book_id){
+	             		 history.data[i].colum_id = colum_id;
+	             		 history.data[i].zhangjie = zhangjie;
+	             		 history.data[i].subject = subject;
+	             		 history.data[i].progress = progress;
+	             		 history.data[i].price = price;
+	             	}
+	             }
+	             $api.setStorage('history',history);;
+	        }else{
+	        	var newhistory = {};
+	            newhistory.image = thebook.image;
+	            newhistory.book_name = thebook.book_name;
+	            newhistory.book_id = indexSetting.book_id;
+	            newhistory.colums = 2;
+	            newhistory.zhangjie = zhangjie;
+	            newhistory.colum_id = colum_id;
+	            newhistory.subject = subject;
+	            newhistory.progress = progress;
+	            newhistory.price = indexSetting.price;
+	            $api.setStorage('history',{data:[newhistory]});        
+	        }
+		});
+    	
+    }
+function getcurrent(){
+   	var d=new Date()
+	var time = d.getFullYear() + '-'+(d.getMonth() + 1)+'-'+d.getDate()+' '+ d.getHours()+':'+d.getMinutes()+':'+d.getSeconds();
+   	$api.text($api.byId('header_time'),time);
+   	setTimeout(function(){
+   		getcurrent();
+   	},1000);
+}
+function setbookname(book_name,subject){
+   		$api.text($api.byId('book_shuming'),'书名:'+book_name);
+   		$api.text($api.byId('book_zhangjie'),'当前章:'+subject);
+}
+function addhide(){
+	$api.addCls($api.byId("main"),"aui-hide");
+	$api.addCls($api.byId("setting"),"aui-hide");
+	$api.addCls($api.byId("bgcolor"),"aui-hide");
+	$api.addCls($api.byId("footer"),"aui-hide");
+	$api.addCls($api.byId("header"),"aui-hide");
+}
+    function readback(){
+    	ajaxhistory(indexSetting.colum_id,indexSetting.zhangjie,indexSetting.subject,indexSetting.price);
+        indexSetting.bookReader.close(function( ret, err ){});
+        api.setFullScreen({
+        	fullScreen: false
+    	});
+        api.closeWin();
+    }
+    // 查看和操作进度
+    function jindu(){
+        indexSetting.bookReader.getProgress(function(ret, err){        
+            if( ret.status ){
+                $api.removeCls($api.byId('main'),'aui-hide');
+                $api.addCls($api.byId('footer'),'aui-hide');
+                $api.val($api.byId('progress'),ret.progress);
+                $api.text($api.byId('nums'),ret.progress+'%');
+            }else{
+                alert(err.msg);
+            }
+        });
+    }
+    // 设置进度
+    var range = new auiRange({
+        element:document.getElementById("progress") //滑块容器
+    },function(ret){
+        $api.text($api.byId('nums'),ret.value+'%');
+    })
+    $api.addEvt($api.byId('progress'), 'touchend', function(){
+        var progress = $api.val($api.byId('progress'));  
+      	indexSetting.bookReader.setValue({
+      		progress: progress
+      		}, function(ret, err){
+      			if( ret.status ){
+      			}else{
+      				alert( JSON.stringify( err ) );
+      			}
+      	});
+    }, false);
+
+    $api.addEvt($api.byId('light'), 'touchend', function(){
+        var light = $api.val($api.byId('light'));  
+        indexSetting.bookReader.setBrightness({
+        	brightness: light
+        	}, function(ret, err){
+        		if( ret.status ){
+        		}else{
+        			alert(err.msg);
+        		}
+        });
+    }, false);
+
+    function setfont(num){
+        indexSetting.fontsize += parseInt(num);
+        indexSetting.bookReader.setValue({
+        	textStyle: {size:indexSetting.fontsize,color:"#333"}
+        	}, function(ret, err){
+        		if( ret.status ){
+        		}else{
+        			alert(err.msg);
+        		}
+        });
+    }
+    function setcolor(color){
+        indexSetting.bg = color;
+        indexSetting.bookReader.setValue({
+        	bg:indexSetting.bg
+        	}, function(ret, err){
+        		if( ret.status ){
+        			$api.css($api.byId('read'),'background:'+indexSetting.bg);
+        		}else{
+        			alert(err.msg);
+        		}
+        });
+    }
+    // 进行设置操作
+    function setting(){
+    $api.addCls($api.byId("main"),"aui-hide");
+	$api.addCls($api.byId("bgcolor"),"aui-hide");
+	$api.addCls($api.byId("footer"),"aui-hide");
+	$api.removeCls($api.byId("setting"),"aui-hide");
+        indexSetting.bookReader.getBrightness(function( ret, err ){        
+            if( ret.status ){
+                $api.val($api.byId('light'),ret.brightness);
+            }else{
+                alert(err.msg);
+            }
+        });
+    }
+    function beijing(){
+    	$api.addCls($api.byId("main"),"aui-hide");
+		$api.addCls($api.byId("setting"),"aui-hide");
+		$api.addCls($api.byId("footer"),"aui-hide");
+		$api.removeCls($api.byId("bgcolor"),"aui-hide");
+    }
+// 分享
+function share(){
+	var dialogBox = api.require('dialogBox');
+    dialogBox.actionMenu ({
+        rect:{
+            h: 150
+        },
+        texts:{
+             cancel: '取消'
+        },
+        items:[
+        {
+            text: 'QQ',
+            icon: 'widget://image/icon/qq.png'
+        },
+        {
+            text: 'QZone',
+            icon: 'widget://image/icon/qzone.png'
+        },{
+            text: '微信',
+            icon: 'widget://image/icon/wechat.png'
+        },
+        {
+            text: '朋友圈',
+            icon: 'widget://image/icon/quan.png'
+        }
+        ],
+        styles:{
+            bg:'#FFF',
+            column: 4,
+            itemText: {
+                color: '#000',
+                size: 12,
+                marginT:8
+            },
+            itemIcon:{
+                size:40
+            },
+            cancel:{  
+                bg: '#ffffff',   
+                color:'#000',          
+                h: 44 ,                 
+                size: 14       
+            }
+        }
+    }, function(ret){
+    	if(ret.index < 2){
+    		var qq = api.require('qq');
+				qq.shareNews({
+				    url: indexSetting.url+'../plugin.php?id=jameson_read&contrl=touch&act=book&book_id='+indexSetting.book_id+'&laiyuan=app&progress='+indexSetting.progress,
+				    title: thebook.book_name,
+				    description: thebook.desco?thebook.desco:' ',
+				    type:(ret.index>0?'QZone':'QFriend'),
+				    imgUrl: indexSetting.url+'../'+(thebook.image?('data/attachment/forum/'+thebook.image):'source/plugin/jameson_read/images/book.jpg')
+				},function(retqq,errqq){
+					if(retqq.status){
+						api.toast({
+				             msg: '分享成功',
+				             duration: 2000,
+				             location: 'top'
+				         });
+					}
+				});
+    	}else if(ret.index < 4){
+    		var wx = api.require('wx');
+			wx.shareWebpage({
+			    scene: (ret.index == 3?'timeline':'session'),
+			    title: thebook.book_name,
+			    description: thebook.desco?thebook.desco:' ',
+			    thumb: 'widget://image/book.png',
+			    contentUrl: indexSetting.url+'../plugin.php?id=jameson_read&contrl=touch&act=book&book_id='+indexSetting.book_id+'&laiyuan=app&progress='+indexSetting.progress
+			}, function(retwx, errwx) {
+			    if (retwx.status) {
+			        api.toast({
+				       msg: '分享成功',
+				       duration: 2000,
+				       location: 'top'
+				     });
+			    } else {
+			    	var msgwx;
+			    	switch(errwx.code){
+			    		case -1:
+			    		msgwx = '未知错误';
+			    		break;
+			    		case 1:
+			    		msgwx = 'apikey非法';
+			    		break;
+			    		case 4:
+			    		msgwx = '授权拒绝';
+			    	}
+			    	if(msgwx){
+			    		api.toast({
+					       msg: msgwx,
+					       duration: 2000,
+					       location: 'top'
+					     });
+			    	}
+			    }
+			});
+    	}
+        dialogBox.close ({
+            dialogName: 'actionMenu'
+        });
+    });
+}
+function openframe(name){
+	api.setFullScreen({
+        	fullScreen: false
+    });
+    api.openWin({
+        name: name,
+        url: './'+name+'.html',
+        rect: {
+            x: 0,
+            y: 0,
+            w: api.winWidth,
+            h: api.winHeight
+        },
+        pageParam: {
+        	book_id:indexSetting.book_id,
+        	book_name:thebook.book_name,
+        	from:'read',
+        	authorid:indexSetting.authorid
+        },
+        bgColor:"#F5F5F5",
+        bounces: false,
+        vScrollBarEnabled: true,
+        hScrollBarEnabled: false,
+        reload:true
+    });
+}
+
+    function getprev(){
+        var userinfo = $api.getStorage('userinfo');
+    	indexSetting.activity.keyFrame({
+            rect: {
+                w: 80,
+                h: 80
+            },
+            styles: {
+                bg: 'rgba(0,0,0,0.5)',
+                corner: 15,
+                interval: 50,
+                frame: {
+                    w: 80,
+                    h: 80
+                }
+            }
+        }, function(ret) {});
+        api.ajax({
+            url: indexSetting.url+'api.php?appkey='+indexSetting.appkey+'&type=get&module=prevcolum&param=book_id----'+indexSetting.book_id+',colum_id----'+indexSetting.colum_id+',zhangjie----'+indexSetting.zhangjie+',bbsuid----'+userinfo.bbsuid,
+            method: 'get'
+        }, function(ret, err) {
+            if(parseInt(ret.data.colum_id) < 1){
+                api.toast({
+                   msg: '已是第一页',
+                   duration: 2000,
+                   location: 'top'
+                });
+                return;
+            }else{
+                // 下载上一章
+                down(indexSetting.book_id,ret.data.colum_id,ret.data.zhangjie,ret.data.subject,ret.data.price,ret.data.kedu,ret.data.uid);
+                setbookname(thebook.book_name,ret.data.subject);
+            }  
+        });
+    }
+
+    function getnext(){
+        var userinfo = $api.getStorage('userinfo');
+    	indexSetting.activity.keyFrame({
+            rect: {
+                w: 80,
+                h: 80
+            },
+            styles: {
+                bg: 'rgba(0,0,0,0.5)',
+                corner: 15,
+                interval: 50,
+                frame: {
+                    w: 80,
+                    h: 80
+                }
+            }
+        }, function(ret) {});
+        api.ajax({
+            url: indexSetting.url+'api.php?appkey='+indexSetting.appkey+'&type=get&module=nextcolum&param=book_id----'+indexSetting.book_id+',colum_id----'+indexSetting.colum_id+',zhangjie----'+indexSetting.zhangjie+',bbsuid----'+userinfo.bbsuid,
+            method: 'get'
+        }, function(ret, err) {
+            if(parseInt(ret.data.colum_id) < 1){
+                api.toast({
+                    msg: '已是最后一页',
+                    duration: 2000,
+                    location: 'top'
+                });
+                return;
+            }else{
+                // 下载下一章
+                down(indexSetting.book_id,parseInt(ret.data.colum_id),ret.data.zhangjie,ret.data.subject,ret.data.price,ret.data.kedu,ret.data.uid);
+				setbookname(thebook.book_name,ret.data.subject);
+            }  
+        });
+    }
+    function down(book_id,colum_id,zhangjie,subject,price,kedu,authorid){
+    	indexSetting.colum_id = colum_id;
+        indexSetting.zhangjie = zhangjie;
+        indexSetting.subject = subject;
+        indexSetting.price = price;
+        ajaxhistory(colum_id,zhangjie,subject,price);
+        var userinfo = $api.getStorage('userinfo');
+        if(price > 0){
+            if(userinfo.bbsuid < 1){
+                // 未登录或未绑定论坛帐号,提醒登录或绑定
+                indexSetting.activity.closeKeyFrame();
+                tixinglogin(price);
+                return false;
+            }else if(!kedu){
+                // 不可读，未购买 提醒购买
+                indexSetting.activity.closeKeyFrame();
+                tixinggoumai('down',book_id,colum_id,zhangjie,subject,price,kedu,authorid);
+                return false;
+            }
+        }
+        api.download({
+            url: indexSetting.url+'api.php?appkey='+indexSetting.appkey+'&type=get&module=downbook&param=book_id----'+book_id+',colum_id----'+colum_id,
+            savePath: 'fs://'+book_id+'_'+colum_id+'.txt',
+            report: true,
+            cache: true,
+            allowResume: true
+        }, function(ret, err) {
+            if (ret.state == 1) {
+                // 下载成功，进行打开
+                indexSetting.bookReader.setValue({
+                    filePath:'fs://'+indexSetting.book_id+'_'+colum_id+'.txt',
+                    progress:0
+                }, function(ret2, err2) {
+                    if (!ret2){
+                        api.toast({
+                            msg: '加载失败',
+                            duration: 2000,
+                            location: 'top'
+                        });
+                    }
+                    indexSetting.activity.closeKeyFrame();
+                });
+                return true;
+            } else if(ret.state==2){
+                indexSetting.activity.closeKeyFrame();
+                api.toast({
+                    msg: '加载失败',
+                    duration: 2000,
+                    location: 'top'
+                });
+                return false;
+            }
+            indexSetting.activity.closeKeyFrame();
+        });
+    }
+
+
+function tixinglogin(price){
+    var userinfo = $api.getStorage('userinfo');
+    // 只有在付费章节才进行判断
+    if(price){
+        // 是付费章节才进行登录判断
+        if(!$api.trim(userinfo.uid) || ($api.trim(userinfo.uid) =='0')){
+            msg = '登录';
+            type = 'login';
+        }else if(parseInt(userinfo.bbsuid) < 1){
+            msg = '绑定';
+            type = 'userinfo';
+        }
+        // 未在登录且绑定状态则进行提醒
+        if(!$api.trim(userinfo.uid) || (parseInt(userinfo.bbsuid) < 1)){
+            var dialogBox = api.require('dialogBox');
+            dialogBox.alert({
+                texts: {
+                    title: '请'+msg,
+                    content: 'VIP章节'+msg+'后才可以阅读哦！',
+                    leftBtnTitle: '取消',
+                    rightBtnTitle: '去'+msg
+                },
+                styles: {
+                    bg: '#f5f5f5',
+                    w: 300,
+                    corner:5,
+                    
+                    title: {
+                        marginT: 20,
+                        icon: 'widget://image/login.png',
+                        iconSize: 40,
+                        titleSize: 14,
+                        titleColor: '#e51c23'
+                    },
+                    content: {
+                        color: '#000',
+                        size: 14
+                    },
+                    left: {
+                        marginB: 7,
+                        marginL: 20,
+                        w: 130,
+                        h: 35,
+                        corner: 2,
+                        bg: '#e51c23',
+                        color:"#ffffff",
+                        size: 12
+                    },
+                    right: {
+                        marginB: 7,
+                        marginL: 10,
+                        w: 130,
+                        h: 35,
+                        corner: 2,
+                        bg: '#009688',
+                        size: 12,
+                        color:"#ffffff"
+                    }
+                }
+            }, function(ret) {
+                if (ret.eventType == 'right') {
+                    api.openWin({
+                        name: type,
+                        url: './'+type+'.html',
+                        progress:{
+                            type:"page"
+                        },
+                        pageParam:{
+                            from:"read"
+                        },
+                        reload:true,
+                        bgColor:"#F5F5F5",
+                        bounces: true,
+                        vScrollBarEnabled: true,
+                        hScrollBarEnabled: false  ,
+                        animation:{
+                            type:"push",
+                            subType:"from_right",
+                            duration:300
+                        }
+                    });
+                }
+                var dialogBox = api.require('dialogBox');
+                    dialogBox.close({
+                        dialogName: 'alert'
+                });
+            });
+        }
+    }
+}
+
+function tixinggoumai (readtype,book_id,colum_id,zhangjie,subject,price,kedu,authorid) {
+    var params = [book_id,colum_id,zhangjie,subject,price,kedu,authorid];
+    var userinfo = $api.getStorage('userinfo');
+    if(userinfo.tramenums < price){
+        // 金钱不足，需充值
+        var dialogBox = api.require('dialogBox');
+        dialogBox.alert({
+                texts: {
+                    title: '请充值',
+                    content: '你的'+indexSetting.trametitle+'不足，请充值后购买本章节！',
+                    leftBtnTitle: '取消',
+                    rightBtnTitle: '去充值'
+                },
+                styles: {
+                    bg: '#f5f5f5',
+                    w: 300,
+                    corner:5,
+                    
+                    title: {
+                        marginT: 20,
+                        icon: 'widget://image/chongzhi.png',
+                        iconSize: 40,
+                        titleSize: 14,
+                        titleColor: '#e51c23'
+                    },
+                    content: {
+                        color: '#000',
+                        size: 14
+                    },
+                    left: {
+                        marginB: 7,
+                        marginL: 20,
+                        w: 130,
+                        h: 35,
+                        corner: 2,
+                        bg: '#e51c23',
+                        color:"#ffffff",
+                        size: 12
+                    },
+                    right: {
+                        marginB: 7,
+                        marginL: 10,
+                        w: 130,
+                        h: 35,
+                        corner: 2,
+                        bg: '#009688',
+                        size: 12,
+                        color:"#ffffff"
+                    }
+                }
+            }, function(ret) {
+                if (ret.eventType == 'right') {
+                    alert('客户端暂未开通充值功能，请去PC端充值');
+                }
+                var dialogBox = api.require('dialogBox');
+                    dialogBox.close({
+                        dialogName: 'alert'
+                });
+            });
+    }else{
+        // 确认购买
+        var dialogBox = api.require('dialogBox');
+        dialogBox.alert({
+                texts: {
+                    title: '购买VIP章节',
+                    content: '本章价格'+price+indexSetting.trametitle+'！',
+                    leftBtnTitle: '取消',
+                    rightBtnTitle: '购买'
+                },
+                styles: {
+                    bg: '#f5f5f5',
+                    w: 300,
+                    corner:5,
+                    
+                    title: {
+                        marginT: 20,
+                        icon: 'widget://image/chongzhi.png',
+                        iconSize: 40,
+                        titleSize: 14,
+                        titleColor: '#e51c23'
+                    },
+                    content: {
+                        color: '#000',
+                        size: 14
+                    },
+                    left: {
+                        marginB: 7,
+                        marginL: 20,
+                        w: 130,
+                        h: 35,
+                        corner: 2,
+                        bg: '#e51c23',
+                        color:"#ffffff",
+                        size: 12
+                    },
+                    right: {
+                        marginB: 7,
+                        marginL: 10,
+                        w: 130,
+                        h: 35,
+                        corner: 2,
+                        bg: '#009688',
+                        size: 12,
+                        color:"#ffffff"
+                    }
+                }
+            }, function(ret) {
+                if (ret.eventType == 'right') {
+                    var bbsuid = userinfo.bbsuid;
+                    var authorid = params[6];
+                    var price = params[4];
+                    var book_id = params[0];
+                    var colum_id = params[1];
+                    api.ajax({
+                        url: indexSetting.url+'api.php?appkey='+indexSetting.appkey+'&type=get&module=buytid&param=bbsuid----'+bbsuid+',book_id----'+book_id+',authorid----'+authorid+',price----'+price+',colum_id----'+colum_id,
+                        method: 'get'
+                    }, function(ret2, err2) {
+                        if(ret2.status){
+                            api.toast({
+                                msg: '购买成功',
+                                duration: 2000,
+                                location: 'top'
+                            });
+                            // 继续阅读或朗读
+                            kedu = 1;
+                            var dialogBox = api.require('dialogBox');
+                            dialogBox.close({
+                               dialogName: 'alert'
+                            });
+                            if(readtype == 'down'){
+                                down(book_id,colum_id,params[2],params[3],price,1,authorid);
+                            }
+                        }else{
+                            api.toast({
+                                msg: '购买失败',
+                                duration: 2000,
+                                location: 'top'
+                            });
+                            var dialogBox = api.require('dialogBox');
+                            dialogBox.close({
+                               dialogName: 'alert'
+                            });
+                        }
+                    });
+                }else{
+                    var dialogBox = api.require('dialogBox');
+                        dialogBox.close({
+                            dialogName: 'alert'
+                    });
+                }
+            });
+    }
+}
+</script>
+</html>

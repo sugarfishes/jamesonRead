@@ -1,0 +1,622 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <meta name="format-detection" content="telephone=no,email=no,date=no,address=no">
+    <link rel="stylesheet" type="text/css" href="../css/aui.2.0.css" />
+    <link rel="stylesheet" type="text/css" href="../css/font-awesome.min.css" />
+    <style type="text/css">
+      #header { position: fixed;z-index: 7;}
+      #header.transparent {background: transparent;box-shadow:none;}
+      #main { padding-bottom:55px;}
+      #read_history { height: 9rem;position: relative;}
+      body {background: url("../image/storeback.png") left top no-repeat #f5f6f7;}
+      #read_history .single { margin-left:0.3rem;margin-right:0.3rem;overflow-x: scroll; overflow-y: hidden;  white-space: nowrap;position:absolute;left:0;right:0;top:0;}
+      #read_history .onebook { position:relative;display: inline-block; text-align: center; margin-right: 8px;width: 4rem;overflow: hidden;}
+      #read_history .onebook .jindu {position:absolute;left:0;top:0;width:4rem;background:rgba(0,0,0,.4);color:#fff;}
+      #read_history img { display: block;width:4rem;box-shadow: 0 0 6px rgba(0,0,0,.3);}
+        #main span.aui-ellipsis-1{ color:#fff;display: inline-block;overflow: hidden;text-overflow:ellipsis;white-space: nowrap;width: 95%;text-align: center;font-size:0.6rem;}
+        #book_store {background:#f5f6f7;position: relative;padding-top: 0.8rem;min-height:400px;}
+        #gonggao { width: 90%;left:50%;margin-left:-45%;overflow:hidden;
+            height: 1.8rem;line-height: 1.8rem;padding-left: 0.5rem;border-radius: 20px;background: #fff;position: absolute;top: -0.8rem;z-index: 6;
+            }
+        #gonggao .right {position: absolute;right: 0.5rem;}
+        #avatarwrap { vertical-align: middle;}
+        .morenstore {position: relative;}
+        #list-list .morenstore .aui-label { position: absolute;left:0;top: 0.5rem;z-index: 6;}
+        #img-list .morenstore.aui-col-xs-3 .aui-label {position:absolute;left:10%;top:0;}
+        .aui-info-item .aui-label { margin-left: 0.2rem;}
+        #main .aui-list::after, #main .aui-list::before, #main .aui-list-item::after, #main .aui-list-item::before { height: 0;}
+        .aui-list .aui-list-item {padding-left: 0.5rem;}
+    </style>
+</head>
+<body>
+<header class="aui-bar aui-bar-nav transparent" id="header">
+    <a class="aui-pull-left aui-btn" onclick="openslide()" tapmode>
+        <span id="avatarwrap" class="aui-iconfont" style="display:inline-block;overflow: hidden;text-align: center;"><img id="avatar" src="../image/liulangnan.png" style="margin:auto;width:24px;height:24px;border-radius: 50%;"></span>
+    </a>
+    <div id="title" class="aui-title"></div>
+    <a class="aui-pull-right aui-btn"  onclick="diago()" tapmode id="openstoremenu">
+        <span class="aui-iconfont aui-icon-menu"></span>
+    </a>
+    <a class="aui-pull-right aui-btn" tapmode onclick="opensearch()">
+        <span class="aui-iconfont aui-icon-search"></span>
+    </a>
+</header>
+<div id="main"></div>
+<script  type="text/x-dot-template" id="main-temp">
+    <div id="read_history" class="aui-text-center">
+        {{? it.historybook && it.historybook.data && $api.isArray(it.historybook.data) && it.historybook.data.length > 0}}
+            <div class="aui-content-padded single">
+            {{ for(var m=0,mlen=it.historybook.data.length;m<mlen;m++) { }}
+                <div class="onebook" onclick="openhistoryread({{=it.historybook.data[m].book_id}},{{=it.historybook.data[m].colums}},{{=it.historybook.data[m].colum_id}},'{{=it.historybook.data[m].zhangjie}}','{{=it.historybook.data[m].subject}}','{{=it.historybook.data[m].book_name}}','{{=it.historybook.data[m].image}}','{{=it.historybook.data[m].progress}}')">
+                    {{? it.historybook.data[m].subject}}<span class="aui-label jindu aui-ellipsis-1">{{=it.historybook.data[m].subject}}</span>{{?}}
+                    <img style="width:4rem;" src="{{? it.historybook.data[m].image}}{{=indexSetting.url}}../data/attachment/forum/{{=it.historybook.data[m].image}}{{??}}../image/book.png{{?}}" alt=""/>
+                    <span class="aui-text-center aui-font-size-12 aui-ellipsis-1">{{=it.historybook.data[m].book_name}}</span>
+                </div>
+            {{ } }}
+            </div>
+        {{??}}<div style="color:#Fff">最近阅读的图书会显示在这里</div>{{?}}
+    </div>
+    <div id="book_store" class="">
+        <div id="gonggao"></div>
+        <div class="aui-row aui-hide" id="img-list">
+      {{? it.bookstore && it.bookstore.data}}
+            {{ for (var i=0,len=it.bookstore.data.length;i<len;i++) { }}
+            <div class="aui-col-xs-3 aui-text-center aui-margin-t-10" onclick="openbook({{=it.bookstore.data[i].book_id}})">
+                <img src="{{? it.bookstore.data[i].image}}{{=indexSetting.url}}../data/attachment/forum/{{=it.bookstore.data[i].image}}{{??}}../image/book.png{{?}}" style="width:80%;display:block;margin:auto" alt="">
+                <span class="aui-text-default aui-text-center aui-ellipsis-1">{{=it.bookstore.data[i].book_name}}</span>
+            </div>
+            {{ } }}
+            {{?}}
+        </div>
+        <ul class="aui-list aui-media-list  aui-margin-t-10" id="list-list">
+        {{? it.bookstore && it.bookstore.data}}
+            {{ for (var i=0,len=it.bookstore.data.length;i<len;i++) { }}
+            <li class="aui-list-item aui-margin-b-10" tapmode onclick="openbook({{=it.bookstore.data[i].book_id}})">
+                <div class="aui-media-list-item-inner">
+                    <div class="aui-list-item-media">
+                        <img src="{{? it.bookstore.data[i].image}}{{=indexSetting.url}}../data/attachment/forum/{{=it.bookstore.data[i].image}}{{??}}../image/book.png{{?}}">
+                    </div>
+                    <div class="aui-list-item-inner">
+                        <div class="aui-list-item-text">
+                            <div class="aui-list-item-title">{{=it.bookstore.data[i].book_name}}</div>
+                            <div class="aui-list-item-right">
+                                <span class="aui-label aui-label-outlined aui-label-warning">{{=it.bookstore.data[i].category_name}}</span>
+                            </div>
+                        </div>
+                        <div class="aui-list-item-text">
+                            {{=it.bookstore.data[i].desco || ''}}
+                        </div>
+                        <div class="aui-info aui-margin-t-10" style="padding:0">
+                            <div class="aui-info-item">
+                                <img src="{{=it.bookstore.data[i].avatar}}" style="width:1rem" class="aui-img-round" /><span class="aui-margin-l-5">{{=it.bookstore.data[i].author}}</span>
+                            </div>
+                            <div class="aui-info-item">
+                            	<span class="">已更新{{=it.bookstore.data[i].colums}}章</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </li>
+            {{ } }}
+            {{?}}
+        </ul>
+    </div>
+</script>
+<script type="text/x-dot-template" id="morenstoreimg">
+    {{ for (var i=0,len=it.data.length;i<len;i++) { }}
+    <div class="aui-col-xs-3  aui-margin-t-10 morenstore" onclick="openbook({{=it.data[i].book_id}})">
+        <div class="aui-label aui-label-danger">荐</div>
+        <img src="{{? it.data[i].image}}{{=indexSetting.url}}../data/attachment/forum/{{=it.data[i].image}}{{??}}../image/book.png{{?}}" style="width:80%;display:block;margin:auto" alt="">
+        <span class="aui-text-default aui-text-center aui-ellipsis-1">{{=it.data[i].book_name}}</span>
+    </div>
+    {{ } }}
+</script>
+<script type="text/x-dot-template" id="morenstorelist">
+    {{ for (var i=0,len=it.data.length;i<len;i++) { }}
+    <li class="aui-list-item aui-margin-b-10 morenstore" tapmode onclick="openbook({{=it.data[i].book_id}})">
+        <div class="aui-media-list-item-inner">
+            <div class="aui-list-item-media ">
+            	<div class="aui-label aui-label-danger">荐</div>
+                <img src="{{? it.data[i].image}}{{=indexSetting.url}}../data/attachment/forum/{{=it.data[i].image}}{{??}}../image/book.png{{?}}">
+            </div>
+            <div class="aui-list-item-inner">
+                <div class="aui-list-item-text">
+                    <div class="aui-list-item-title">{{=it.data[i].book_name}}</div>
+                    <div class="aui-list-item-right"></div>
+                </div>
+                <div class="aui-list-item-text">
+                    {{=it.data[i].desco || ''}}
+                </div>
+                <div class="aui-info aui-margin-t-10" style="padding:0;">
+                    <div class="aui-info-item">
+                        <img src="{{=it.data[i].avatar}}" style="width:1rem" class="aui-img-round" />
+                        <span class="aui-margin-l-5">{{=it.data[i].author}}</span>
+                        <span class="aui-margin-l-5 ">已更新{{=it.data[i].colums}}章</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </li>
+    {{ } }}
+</script>
+<script type="text/x-dot-template" id="gonggao-temp">
+    {{ for(var n=0,nlen=it.gonggao.length;n<nlen;n++) { }}
+            <div class="{{? n>0}}aui-hide{{?}} gonggaolist" id="gonggaolist_{{=n}}" onclick="openwebpage('{{=it.gonggao[n].url}}','{{=it.gonggao[n].image}}')">
+                <i class="fa fa-bookmark aui-text-danger"></i>
+                <span class="aui-text-primary aui-font-size-14">{{=it.gonggao[n].image}}</span>
+                <i class="aui-iconfont aui-icon-right right"></i>           
+            </div>
+        {{ } }}
+</script>
+<div class="aui-tips aui-margin-b-15 aui-hide" id="nonetwork" style="position:fixed;bottom:50px;left: 0;right:0;z-index: 9999;">
+    <i class="aui-iconfont aui-icon-info"></i>
+    <div class="aui-tips-title">当前没有网络连接</div>
+    <i class="aui-iconfont aui-icon-close" tapmode onclick="closeTips()"></i>
+</div>
+</body>
+<script type="text/javascript" src="../script/api.js"></script>
+<script type="text/javascript" src="../script/dot.js"></script>
+<script type="text/javascript" src="../script/aui-scroll.js" ></script>
+<script type="text/javascript">
+    var scroll = new auiScroll({
+            listen:true,
+            distance:50
+        },function(ret){
+        if(ret.scrollTop > 50){
+            $api.removeCls($api.byId('header'),'transparent');
+            $api.text($api.byId('title'),'我的书架');
+        }else{
+            $api.addCls($api.byId('header'),'transparent');
+            $api.text($api.byId('title'),'');
+        }
+    });
+    var indexSetting = $api.getStorage('appinfo');
+    if($api.getStorage('localstore')){
+        indexSetting.localstore = ($api.getStorage('localstore'));
+    }else{
+        indexSetting.localstore = {data:[]};
+    }
+apiready = function(){
+    ajaxuser();
+    $api.fixStatusBar($api.dom('header'));
+    api.parseTapmode();
+    $api.css($api.byId('main'),'margin-top:'+$api.offset($api.dom('header')).h+'px');
+    var headerh = $api.offset($api.dom('header')).h;
+    api.addEventListener({
+        name: 'keymenu'
+    }, function(ret, err) {
+        document.getElementById('openstoremenu').click = diago();
+    });
+    indexSetting.userinfo = $api.getStorage('userinfo');
+    indexSetting.fs = api.require('fs');
+    indexSetting.activity = api.require('UILoading');
+    indexSetting.activity.keyFrame({
+        rect: {
+            w: 80,
+            h: 80
+        },
+        styles: {
+            bg: 'rgba(0,0,0,0.5)',
+            corner: 15,
+            interval: 50,
+            frame: {
+                w: 80,
+                h: 80
+            }
+        }
+    }, function(ret) {});
+    indexSetting.mnPopups = api.require('MNPopups');
+    api.addEventListener({
+       name:'offline'
+    }, function(ret, err){
+        $api.removeCls($api.byId('nonetwork'),'aui-hide');
+    });
+
+    api.addEventListener({
+        name:'online'
+    }, function(ret, err){
+        closeTips();
+    });
+	checkstatus();
+    indexSetting.userinfo = $api.getStorage('userinfo');
+    initload();
+    if(api.connectionType == 'none'){
+        $api.removeCls($api.byId('nonetwork'),'aui-hide');
+        api.toast({
+            msg: '没有网络',
+            duration: 2000,
+            location: 'top'
+        });
+    }else{
+        api.setRefreshHeaderInfo({
+            visible: true,
+            bgColor: '#ccc',
+            textColor: '#fff',
+            textDown: '下拉刷新...',
+            textUp: '松开刷新...',
+            showTime: true
+        }, function(ret, err) {
+            ajaxuser();
+            indexSetting.history = $api.getStorage('history');
+            indexSetting.localstore = $api.getStorage('localstore');
+            indexSetting.userinfo = $api.getStorage('userinfo');
+            initload();
+            api.refreshHeaderLoadDone();
+        });
+    }
+};
+
+function closeTips(){
+  $api.addCls($api.byId('nonetwork'),'aui-hide');
+}
+function playgonggao(){
+    var len = indexSetting.gonggaolength;
+    if(len){
+        for(var i=0;i<len;i++){
+            if(! $api.hasCls($api.byId('gonggaolist_'+i),'aui-hide')){
+                $api.addCls($api.byId('gonggaolist_'+i),'aui-hide');
+                if(i< len-1){
+                    $api.removeCls($api.byId('gonggaolist_'+(i+1)),'aui-hide');
+                }else{
+                    $api.removeCls($api.byId('gonggaolist_0'),'aui-hide');
+                }
+                break;
+            }
+        }
+    }
+    setTimeout(function(){
+        playgonggao();
+    },5000);
+}
+function diago(){  
+    indexSetting.mnPopups.open({
+        rect: {
+            w: 100,
+            h: 135
+        },
+        position: {       
+            x: api.winWidth-20,             
+            y: 45                            
+        },
+        styles: {
+            mask: 'rgba(0,0,0,0.2)',
+            bg: '#eee',  
+            corner:5,                       
+            cell: {                            
+                bg:{
+                    normal: '',              
+                    highlight: ''            
+                },                   
+                h: 45,                         
+                title: {                      
+                    marginL: 35,               
+                    color: '#636363',          
+                    size: 12,                 
+                },
+                icon: {                        
+                    marginL: 6,               
+                    w: 25,                     
+                    h: 25,                     
+                    corner: 2                  
+                }
+            },
+            pointer: {
+                size: 7,                     
+                xPercent: 90,                
+                yPercent: 0,                 
+                orientation: 'downward'
+            }
+        },
+        datas: [{                           
+            title: '列表/封面',  
+            icon: 'widget://image/icon/fengmian.png'
+        },
+        {                           
+            title: '编辑书架',  
+            icon: 'widget://image/icon/edit.png'
+        },
+        {
+        	title:'本地图书',
+        	icon:'widget://image/icon/benji.png'
+        }],
+        animation: true
+    }, function(ret) {
+        if (ret) {
+            if(ret.eventType == 'click'){
+            	if(ret.index==2){
+            		//本地图书查看
+            		api.openWin({
+                        name: 'bendi',
+                        url: './bendi.html',
+                        rect: {
+                            x: 0,
+                            y: 0,
+                            w: api.winWidth,
+                            h: api.winHeight
+                        },
+                        bgColor:"#F5F5F5",
+                        bounces: true,
+                        vScrollBarEnabled: true,
+                        hScrollBarEnabled: false,
+                        animation:{
+                            type:"push",
+                            subType:"from_right",
+                            duration:300
+                        },
+                        reload:true
+                    });
+            	}else if(ret.index==1){
+                    api.openWin({
+                        name: 'editstore',
+                        url: './edit_store.html',
+                        rect: {
+                            x: 0,
+                            y: 0,
+                            w: api.winWidth,
+                            h: api.winHeight
+                        },
+                        bgColor:"#F5F5F5",
+                        bounces: false,
+                        vScrollBarEnabled: true,
+                        hScrollBarEnabled: false,
+                        animation:{
+                            type:"push",
+                            subType:"from_right",
+                            duration:300
+                        },
+                        reload:true
+                    });
+                }else{
+                    if($api.hasCls($api.byId('list-list'),'aui-hide')){
+                        // 切换到列表模式
+                        $api.removeCls($api.byId('list-list'),'aui-hide');
+                        $api.addCls($api.byId('img-list'),'aui-hide');
+                    }else{
+                        // 切换到封面模式
+                        $api.addCls($api.byId('list-list'),'aui-hide');
+                        $api.removeCls($api.byId('img-list'),'aui-hide');
+                    } 
+                }
+            }
+        }
+    });
+}
+    //  初始化 
+function initload(){
+	indexSetting.history = $api.getStorage('history');
+    if(indexSetting.userinfo && indexSetting.userinfo.bbsuid){
+        api.ajax({
+            url: indexSetting.url+'api.php?appkey='+indexSetting.appkey+'&type=get&module=store&param=bbsuid----'+indexSetting.userinfo.bbsuid,
+            method: 'get'
+        }, function(ret, err) {
+            if (ret) {
+                if(ret.status){
+                    var temp = $api.text($api.byId("main-temp"));
+                    var dottemp = doT.template(temp);
+                    ret.historybook = indexSetting.history;
+                    var html = dottemp(ret);
+                    $api.html($api.byId('main'),html);
+                    $api.setStorage('localstore',ret.bookstore);
+                }else{
+                    api.toast({
+                        msg: ret.error,
+                        duration: 2000,
+                        location: 'top'
+                    });
+                }
+                indexSetting.activity.closeKeyFrame();
+            } else {
+                var msg = JSON.stringify(err);
+                api.toast({
+                    msg: msg.msg,
+                    duration: 2000,
+                    location: 'top'
+                });
+            }
+        });
+    }else{
+        var ret = {};
+        var temp = $api.text($api.byId("main-temp"));
+        var dottemp = doT.template(temp);
+        ret.historybook = indexSetting.history;
+        ret.bookstore = indexSetting.localstore;
+        var html = dottemp(ret);
+        $api.html($api.byId('main'),html);
+    }
+    if(api.connectionType != 'none'){
+        setTimeout(function(){
+            api.ajax({
+                url: indexSetting.url+'api.php?appkey='+indexSetting.appkey+'&type=get&module=morenstore',
+                method: 'get'
+            }, function(ret, err) {
+                if(ret.data.length){
+                    var tempimg = $api.text($api.byId("morenstoreimg"));
+                    var dottempimg = doT.template(tempimg);
+                    var htmlimg = dottempimg(ret);
+                    $api.prepend($api.byId('img-list'),htmlimg);
+                    var templist = $api.text($api.byId("morenstorelist"));
+                    var dottemplist = doT.template(templist);
+                    var htmllist = dottemplist(ret);
+                    $api.prepend($api.byId('list-list'),htmllist);
+                }
+                if(ret.gonggao.length){
+                    indexSetting.gonggaolength = ret.gonggao.length;
+                    var gonggao = $api.text($api.byId("gonggao-temp"));
+                    var gonggaotemp = doT.template(gonggao);
+                    var gonggaohtml = gonggaotemp(ret);
+                    $api.html($api.byId('gonggao'),gonggaohtml);
+                    setTimeout(function(){
+                        playgonggao();
+                    },8000);
+                }
+                indexSetting.activity.closeKeyFrame();
+            });
+        },100);
+    }else{
+        indexSetting.activity.closeKeyFrame();
+    }
+}
+function openslide () {
+    var islogin=0;
+    var url='login';
+    checkstatus();
+    if(indexSetting.userinfo && !!indexSetting.userinfo.uid){
+        // 已登录进入会员详细信息
+       islogin=1;
+       url='userinfo';
+    }
+    api.openWin({
+        name: url,
+        url: './'+url+'.html',
+        progress:{
+            type:"page"
+        },
+        pageParam:{
+            from:"store",
+            islogin:islogin
+        },
+        reload:true,
+        bgColor:"#F5F5F5",
+        bounces: true,
+        vScrollBarEnabled: true,
+        hScrollBarEnabled: false  ,
+        animation:{
+            type:"push",
+            subType:"from_right",
+            duration:300
+        }
+    });
+}
+function checkstatus () {
+    indexSetting.userinfo = $api.getStorage('userinfo');
+    $api.attr($api.byId('avatar'),'src',indexSetting.userinfo.avatar);
+}
+
+
+function openhistoryread(book_id,colums,colum_id,zhangjie,subject,book_name,image,progress){
+   if(parseInt(colums) < 1){
+   		openbook(book_id);
+   }else{
+ 		openzhangjie(book_id,colum_id,zhangjie,subject,book_name,image,progress);
+   }
+}
+
+    //下载
+function down(book_id,colum_id){
+    api.download({
+        url: indexSetting.url+'api.php?appkey='+indexSetting.appkey+'&type=get&module=downbook&param=book_id----'+book_id+',colum_id----'+colum_id,
+        savePath: 'fs://'+book_id+'_'+colum_id+'.txt',
+        report: true,
+        cache: true,
+        allowResume: true
+    }, function(ret, err) {
+        if (ret.state == 1) {
+            indexSetting.download = true;
+            return true;
+        } else if(ret.state==2){
+            api.toast({
+                msg: '下载失败',
+                duration: 2000,
+                location: 'top'
+            });
+            indexSetting.download = false;
+            return false;
+        }
+    });
+}
+//阅读
+function openzhangjie(book_id,colum_id,zhangjie,subject,book_name,image,progress){
+	indexSetting.activity.keyFrame({
+       rect: {
+         w: 80,
+         h: 80
+       },
+       styles: {
+          bg: 'rgba(0,0,0,0.5)',
+          corner: 15,
+          interval: 50,
+          frame: {
+            w: 80,
+            h: 80
+          }
+       }
+    }, function(ret) {});
+    indexSetting.download = 1;
+    indexSetting.fs.exist({
+        path: 'fs://'+book_id+'_'+colum_id+'.txt'
+    },function(ret,err){
+        if(!ret.exist){
+            down(book_id,colum_id);
+        }else{
+            indexSetting.download = true;
+        }
+    });
+    var intval = setInterval(function(){
+        if(indexSetting.download !== 1){
+            clearInterval(intval);
+            checkdownload(book_id,colum_id,zhangjie,subject,book_name,image,progress);
+        }
+    },1000);
+}
+function checkdownload(book_id,colum_id,zhangjie,subject,book_name,image,progress){
+	indexSetting.fs.getAttribute({
+		    path: 'fs://'+book_id+'_'+colum_id+'.txt'
+		}, function(ret, err) {
+		    if (ret.status) {
+		        if(ret.attribute.size > 1){
+		        	indexSetting.download = true;
+		        }else{
+		        	indexSetting.download = false;
+		        }
+		    } else {
+		        indexSetting.download = false;
+		    }
+		});
+
+    if(indexSetting.download === true){
+    	indexSetting.activity.closeKeyFrame();
+         api.openWin({
+             name: 'read',
+             url: './read.html',
+             rect: {
+                 x: 0,
+                 y: 0,
+                 w: api.winWidth,
+                 h: api.Height
+             },
+             pageParam: {
+                 book_id: book_id,
+                 book_name:book_name,
+                 image:image,
+                 desco:'',
+                 colum_id:colum_id,
+                 zhangjie:zhangjie,
+                 subject:subject,
+                 progress:progress
+             },
+             bgColor:"#F5F5F5",
+             bounces: false,
+             vScrollBarEnabled: true,
+             hScrollBarEnabled: false,
+             animation:{
+                 type:"push",
+                 subType:"from_right",
+                 duration:300
+             },
+             reload:true
+         });    
+     }else{
+        api.toast({
+             msg: '暂无内容',
+             duration: 2000,
+             location: 'top'
+         });
+         indexSetting.activity.closeKeyFrame();
+         return false;
+     }
+}
+</script>
+</html>

@@ -1,0 +1,533 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <meta name="format-detection" content="telephone=no,email=no,date=no,address=no">
+    <link rel="stylesheet" type="text/css" href="../css/aui.2.0.css" />
+    <link rel="stylesheet" type="text/css" href="../css/font-awesome.min.css" />
+    <style type="text/css">
+    	#header {position:fixed;left:0;right:0;}
+    	#main .aui-col-xs-4 {background: #fff;}
+    	#main .aui-list::after, #main .aui-list::before { height: 0;}
+		#main .juantitle {height:auto;padding-top:0.5rem;padding-bottom:0.5rem;}
+    </style>
+</head>
+<body>
+<header class="aui-bar aui-bar-nav" id="header">
+    <a class="aui-pull-left aui-btn" onclick="muluback()">
+        <i class="aui-iconfont aui-icon-left"></i>
+    </a>
+    <div class="aui-title" id="title">目录</div>
+</header>
+<div id="main"></div>
+<script  type="text/x-dot-template" id="main-temp">
+    <ul class="aui-list aui-list-in">
+{{? it.data}}
+    {{ for (var i=0,len=it.data.length;i<len;i++) { }}
+        <li class="{{? len<2}}aui-hide{{?}}aui-list-header aui-text-center juantitle">{{=it.data[i].j_title}}</li>
+        {{ for(var j=0,jlen=it.data[i].zhangjie.length;j<jlen;j++) { }}
+         <li class="aui-list-item" tapmode onclick="openzhangjie({{=it.data[i].zhangjie[j].colum_id}},'{{=it.data[i].zhangjie[j].zhangjie}}','{{=it.data[i].zhangjie[j].subject}}',{{=it.data[i].zhangjie[j].price}})">
+             <div class="aui-list-item-inner aui-list-item-arrow">
+                 <div class="aui-list-item-title">{{=it.data[i].zhangjie[j].subject}}</div>
+                 <div class="aui-list-item-right">
+                     {{? it.data[i].zhangjie[j].price > 0}}
+                     <div class=" aui-text-danger">{{=it.data[i].zhangjie[j].price}}{{=indexSetting.trametitle}}</div>
+                     {{??}} 免费 {{?}}
+                     </div>
+                 </div>
+             </div>
+         </li>
+        {{ } }}
+    {{ } }}
+    {{??}}
+    <li class="aui-list-header">本书暂无章节</li>
+{{?}}
+    </ul>
+</script>
+</body>
+<script type="text/javascript" src="../script/api.js"></script>
+<script type="text/javascript" src="../script/dot.js"></script>
+<script type="text/javascript">
+    var indexSetting = $api.getStorage('appinfo');
+    indexSetting.ids = [];
+    apiready = function(){
+        ajaxuser();
+        $api.fixStatusBar( $api.dom('header') );
+        api.parseTapmode();
+        $api.css($api.byId('main'),'margin-top:'+$api.offset($api.dom('header')).h+'px');
+        indexSetting.fs = api.require('fs');
+        $api.text($api.byId('title'),'[目录]'+api.pageParam.book_name);
+        indexSetting.book_name = api.pageParam.book_name;
+        indexSetting.book_id = api.pageParam.book_id;
+        indexSetting.authorid = api.pageParam.authorid;
+        indexSetting.from = api.pageParam.from;
+        indexSetting.activity = api.require('UILoading');
+        indexSetting.activity.keyFrame({
+            rect: {
+                w: 80,
+                h: 80
+            },
+            styles: {
+                bg: 'rgba(0,0,0,0.5)',
+                corner: 15,
+                interval: 50,
+                frame: {
+                    w: 80,
+                    h: 80
+                }
+            }
+        }, function(ret) {});
+        ajaxuser();
+        indexSetting.userinfo = $api.getStorage('userinfo');
+        initload();
+        api.addEventListener({
+		    name: 'keyback'
+		}, function(ret, err) {
+		    if(ret){
+		    	muluback();
+		    }
+		});       
+		api.setRefreshHeaderInfo({
+		    visible: true,
+		    bgColor: '#ccc',
+		    textColor: '#fff',
+		    textDown: '下拉刷新...',
+		    textUp: '松开刷新...',
+		    showTime: true
+		}, function(ret, err) {
+			ajaxuser();
+	        indexSetting.userinfo = $api.getStorage('userinfo');
+			initload();
+			api.refreshHeaderLoadDone();
+		}); 
+    };
+	
+	function muluback(){
+		if(indexSetting.from && (indexSetting.from == 'read')){
+			api.setFullScreen({
+        		fullScreen: true
+    		});
+			back();
+		}else{
+			back();
+		}
+	}
+    //  初始化 
+    function initload(){
+        api.ajax({
+            url: indexSetting.url+'api.php?appkey='+indexSetting.appkey+'&type=get&module=mulu&param=book_id----'+indexSetting.book_id,
+            method: 'get'
+        }, function(ret, err) {
+            if (ret) {
+                if(ret.status){
+                    var temp = $api.text($api.byId("main-temp"));
+                    var dottemp = doT.template(temp);
+                    var html = dottemp(ret);
+                    indexSetting.bookinfo = ret.bookinfo;
+                    $api.html($api.byId('main'),html);
+                }else{
+                    api.toast({
+                        msg: ret.error,
+                        duration: 2000,
+                        location: 'top'
+                    });
+                }
+                indexSetting.activity.closeKeyFrame();
+            } else {
+                api.toast({
+                    msg: err.msg,
+                    duration: 2000,
+                    location: 'top'
+                });
+                indexSetting.activity.closeKeyFrame();
+            }
+        });
+    }
+    //下载
+function down(colum_id){
+    api.download({
+        url: indexSetting.url+'api.php?appkey='+indexSetting.appkey+'&type=get&module=downbook&param=book_id----'+indexSetting.book_id+',colum_id----'+colum_id,
+        savePath: 'fs://'+indexSetting.book_id+'_'+colum_id+'.txt',
+        report: true,
+        cache: true,
+        allowResume: true
+    }, function(ret, err) {
+        if (ret.state == 1) {
+            indexSetting.download = true;
+            return true;
+        } else if(ret.state==2){
+            api.toast({
+                msg: '下载失败',
+                duration: 2000,
+                location: 'top'
+            });
+            indexSetting.download = false;
+            return false;
+        }
+    });
+}
+//阅读
+function openzhangjie(colum_id,zhangjie,subject,price){
+	indexSetting.params = [colum_id,zhangjie,subject,price];
+	indexSetting.activity.keyFrame({
+        rect: {
+            w: 80,
+            h: 80
+        },
+        styles: {
+            bg: 'rgba(0,0,0,0.5)',
+            corner: 15,
+            interval: 50,
+            frame: {
+                w: 80,
+                h: 80
+            }
+        }
+    }, function(ret) {});
+    indexSetting.download = 1;
+    indexSetting.fs.exist({
+        path: 'fs://'+indexSetting.book_id+'_'+colum_id+'.txt'
+    },function(ret,err){
+        if(!ret.exist){
+            down(colum_id);
+        }else{
+            indexSetting.download = true;
+        }
+    });
+    var intval = setInterval(function(){
+        if(indexSetting.download !== 1){
+            clearInterval(intval);
+            if(price < 1){
+            	checkdownload(indexSetting.params[0],indexSetting.params[1],indexSetting.params[2],indexSetting.params[3]);
+            }else{
+            	//提醒登录或绑定
+            	var userinfo = $api.getStorage('userinfo');
+            	if(userinfo.bbsuid < 1){
+            		indexSetting.activity.closeKeyFrame();
+            		tixinglogin();
+            	}else{
+            		//去判断本章节是否可以读，如果不可读，则去提示登录绑定和购买充值
+					 api.ajax({
+				    	url: indexSetting.url+'api.php?appkey='+indexSetting.appkey+'&type=get&module=isbuy&param=book_id----'+indexSetting.book_id+',bbsuid----'+userinfo.bbsuid+',colum_id----'+colum_id,
+				    	method: 'get'
+					}, function(ret, err) {
+						if(ret.status){
+							//购买过，或者可读 
+							checkdownload(indexSetting.params[0],indexSetting.params[1],indexSetting.params[2],indexSetting.params[3]);
+						}else{
+							//提示购买或充值
+							indexSetting.activity.closeKeyFrame();
+							tixinggoumai('checkdownload',indexSetting.params[0],indexSetting.params[1],indexSetting.params[2],indexSetting.params[3]);
+						}
+					});
+            	
+            	}
+            }
+        }
+    },1000);
+}
+
+
+function checkdownload(colum_id,zhangjie,subject,price){
+	indexSetting.fs.getAttribute({
+		    path: 'fs://'+indexSetting.book_id+'_'+colum_id+'.txt'
+		}, function(ret, err) {
+		    if (ret.status) {
+		        if(ret.attribute.size > 1){
+		        	indexSetting.download = true;
+		        }else{
+		        	indexSetting.download = false;
+		        }
+		    } else {
+		        indexSetting.download = false;
+		    }
+		});
+
+    if(indexSetting.download === true){
+    	indexSetting.activity.closeKeyFrame();
+         api.openWin({
+             name: 'read',
+             url: './read.html',
+             rect: {
+                 x: 0,
+                 y: 0,
+                 w: api.winWidth,
+                 h: api.Height
+             },
+             pageParam: {
+                 book_id: indexSetting.book_id,
+                 book_name:indexSetting.book_name,
+                 image:indexSetting.bookinfo.image,
+                 desco:indexSetting.bookinfo.desco,
+                 colum_id:colum_id,
+                 zhangjie:zhangjie,
+                 subject:subject
+             },
+             bgColor:"#F5F5F5",
+             bounces: false,
+             vScrollBarEnabled: true,
+             hScrollBarEnabled: false,
+             animation:{
+                 type:"push",
+                 subType:"from_right",
+                 duration:300
+             },
+             reload:true
+         });    
+     }else{
+        api.toast({
+             msg: '暂无内容',
+             duration: 2000,
+             location: 'top'
+         });
+         indexSetting.activity.closeKeyFrame();
+         return false;
+     }
+}
+function tixinglogin(){
+    indexSetting.userinfo = $api.getStorage('userinfo');
+        // 是付费章节才进行登录判断
+        if(!$api.trim(indexSetting.userinfo.uid) || ($api.trim(indexSetting.userinfo.uid) =='0')){
+            msg = '登录';
+            type = 'login';
+        }else if(parseInt(indexSetting.userinfo.bbsuid) < 1){
+            msg = '绑定';
+            type = 'userinfo';
+        }
+        // 未在登录且绑定状态则进行提醒
+        if(!$api.trim(indexSetting.userinfo.uid) || (parseInt(indexSetting.userinfo.bbsuid) < 1)){
+            var dialogBox = api.require('dialogBox');
+            dialogBox.alert({
+                texts: {
+                    title: '请'+msg,
+                    content: 'VIP章节'+msg+'后才可以阅读哦！',
+                    leftBtnTitle: '取消',
+                    rightBtnTitle: '去'+msg
+                },
+                styles: {
+                    bg: '#f5f5f5',
+                    w: 300,
+                    corner:5,
+                    
+                    title: {
+                        marginT: 20,
+                        icon: 'widget://image/login.png',
+                        iconSize: 40,
+                        titleSize: 14,
+                        titleColor: '#e51c23'
+                    },
+                    content: {
+                        color: '#000',
+                        size: 14
+                    },
+                    left: {
+                        marginB: 7,
+                        marginL: 20,
+                        w: 130,
+                        h: 35,
+                        corner: 2,
+                        bg: '#e51c23',
+                        color:"#ffffff",
+                        size: 12
+                    },
+                    right: {
+                        marginB: 7,
+                        marginL: 10,
+                        w: 130,
+                        h: 35,
+                        corner: 2,
+                        bg: '#009688',
+                        size: 12,
+                        color:"#ffffff"
+                    }
+                }
+            }, function(ret) {
+                if (ret.eventType == 'right') {
+                    api.openWin({
+                        name: type,
+                        url: './'+type+'.html',
+                        progress:{
+                            type:"page"
+                        },
+                        pageParam:{
+                            from:"mulu",
+                            book_id:indexSetting.book_id
+                        },
+                        reload:true,
+                        bgColor:"#F5F5F5",
+                        bounces: true,
+                        vScrollBarEnabled: true,
+                        hScrollBarEnabled: false  ,
+                        animation:{
+                            type:"push",
+                            subType:"from_right",
+                            duration:300
+                        }
+                    });
+                }
+                var dialogBox = api.require('dialogBox');
+                    dialogBox.close({
+                        dialogName: 'alert'
+                });
+            });
+        }
+}
+
+function tixinggoumai (readtype,colum_id,zhangjie,subject,price) {
+    ajaxuser();
+	var params = [colum_id,zhangjie,subject,price];
+    var userinfo = $api.getStorage('userinfo');
+    if(userinfo.tramenums < price){
+        // 金钱不足，需充值
+        var dialogBox = api.require('dialogBox');
+        dialogBox.alert({
+                texts: {
+                    title: '请充值',
+                    content: '你的'+indexSetting.trametitle+'不足，请充值后购买本章节！',
+                    leftBtnTitle: '取消',
+                    rightBtnTitle: '去充值'
+                },
+                styles: {
+                    bg: '#f5f5f5',
+                    w: 300,
+                    corner:5,
+                    
+                    title: {
+                        marginT: 20,
+                        icon: 'widget://image/chongzhi.png',
+                        iconSize: 40,
+                        titleSize: 14,
+                        titleColor: '#e51c23'
+                    },
+                    content: {
+                        color: '#000',
+                        size: 14
+                    },
+                    left: {
+                        marginB: 7,
+                        marginL: 20,
+                        w: 130,
+                        h: 35,
+                        corner: 2,
+                        bg: '#e51c23',
+                        color:"#ffffff",
+                        size: 12
+                    },
+                    right: {
+                        marginB: 7,
+                        marginL: 10,
+                        w: 130,
+                        h: 35,
+                        corner: 2,
+                        bg: '#009688',
+                        size: 12,
+                        color:"#ffffff"
+                    }
+                }
+            }, function(ret) {
+                if (ret.eventType == 'right') {
+                    alert('客户端暂未开通充值功能，请去PC端充值');
+                }
+                var dialogBox = api.require('dialogBox');
+                    dialogBox.close({
+                        dialogName: 'alert'
+                });
+            });
+    }else{
+        // 确认购买
+        var dialogBox = api.require('dialogBox');
+        dialogBox.alert({
+                texts: {
+                    title: '购买VIP章节',
+                    content: '本章价格'+price+indexSetting.trametitle+'！',
+                    leftBtnTitle: '取消',
+                    rightBtnTitle: '购买'
+                },
+                styles: {
+                    bg: '#f5f5f5',
+                    w: 300,
+                    corner:5,
+                    
+                    title: {
+                        marginT: 20,
+                        icon: 'widget://image/chongzhi.png',
+                        iconSize: 40,
+                        titleSize: 14,
+                        titleColor: '#e51c23'
+                    },
+                    content: {
+                        color: '#000',
+                        size: 14
+                    },
+                    left: {
+                        marginB: 7,
+                        marginL: 20,
+                        w: 130,
+                        h: 35,
+                        corner: 2,
+                        bg: '#e51c23',
+                        color:"#ffffff",
+                        size: 12
+                    },
+                    right: {
+                        marginB: 7,
+                        marginL: 10,
+                        w: 130,
+                        h: 35,
+                        corner: 2,
+                        bg: '#009688',
+                        size: 12,
+                        color:"#ffffff"
+                    }
+                }
+            }, function(ret) {
+                if (ret.eventType == 'right') {
+                    var bbsuid = userinfo.bbsuid;
+                    var authorid = indexSetting.authorid;
+                    var price = params[3];
+                    var book_id = indexSetting.book_id;
+                    var colum_id = params[0];
+                    api.ajax({
+                        url: indexSetting.url+'api.php?appkey='+indexSetting.appkey+'&type=get&module=buytid&param=bbsuid----'+bbsuid+',book_id----'+book_id+',authorid----'+authorid+',price----'+price+',colum_id----'+colum_id,
+                        method: 'get'
+                    }, function(ret2, err2) {
+                        if(ret2.status){
+                                api.toast({
+                                    msg: '购买成功',
+                                    duration: 2000,
+                                    location: 'top'
+                                });
+                                // 继续阅读或朗读
+                                indexSetting.firstkedu = 1;
+                                var dialogBox = api.require('dialogBox');
+                                dialogBox.close({
+                                   dialogName: 'alert'
+                                });
+                                if(readtype == 'checkdownload'){
+                                    checkdownload(colum_id,zhangjie,subject,price);
+                                }
+                        }else{
+                                api.toast({
+                                    msg: '购买失败',
+                                    duration: 2000,
+                                    location: 'top'
+                                });
+                            var dialogBox = api.require('dialogBox');
+                            dialogBox.close({
+                               dialogName: 'alert'
+                            });
+                        }
+                    });
+                }else{
+                    var dialogBox = api.require('dialogBox');
+                        dialogBox.close({
+                            dialogName: 'alert'
+                    });
+                }
+            });
+    }
+}
+
+</script>
+</html>

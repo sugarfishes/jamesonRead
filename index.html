@@ -1,0 +1,302 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <meta name="format-detection" content="telephone=no,email=no,date=no,address=no">
+    <link rel="stylesheet" type="text/css" href="./css/aui.2.0.css" />
+    <link rel="stylesheet" type="text/css" href="./css/font-awesome.min.css" />
+    <style type="text/css"></style>
+</head>
+<body>
+
+<div id="main">
+    <div class="aui-hide" id="nonetwork" style="position:absolute;top:0;bottom:0;right: 0;left: 0;background: rgba(0,0,0,.5);text-align: center;font-size:1rem;color:#fff;vertical-align: middle;">
+        <div class="" style="line-height: 1.5rem;position: absolute;top: 5rem;width:100%;text-align: center">当前没有网络连接<br>你可以到书架中阅读离线图书</div>
+    </div>
+</div>
+</body>
+<script type="text/javascript" src="./script/api.js"></script>
+<script type="text/javascript">
+var indexSetting = {appkey:'33ff1ca1cd563653902cfee999750e00',url:"http://demo.jameson512.com/xifeng/"};
+apiready = function () {
+  var WelcomePage = api.require('welcomePage');
+  WelcomePage.openWelcomePage({
+      isFullscreen: true,
+      AnimationType: 'Cube',
+      imgs: ['widget://image/s1.png', 'widget://image/s2.png', 'widget://image/s3.png'],
+      setting: {
+          isShow: false,
+          ImgSize: 30,
+          ImgSpacing: 10
+      }
+  }, function(ret, err) {});
+    $api.fixStatusBar($api.dom('header') );
+    api.parseTapmode();
+    navbottom();
+    $api.setStorage('nvtabbar','jingxuan');
+    if(!!api.pageParam.from &&  api.pageParam.from =='logout'){
+        api.alert({
+            msg:"成功退出"
+        })
+        indexSetting.NVTabBar.setSelect({
+            index: 1
+        });
+    }
+
+    api.addEventListener({
+        name:'appintent'
+    },function(ret,err){
+        var appParam = ret.appParam;
+        if(api.systemType == 'ios'){
+            var baoming = ret.iosUrl;
+        } else {
+            var baoming = ret.sourceAppId;
+        }
+        if(/book_id=(\d+)[^\d]*/i.test(appParam)){
+		   var bookids = appParam.match(/book_id=(\d+)[^\d]*/i);
+		   if(parseInt(bookids[1])){
+		   	     api.openWin({
+			        name: 'book_'+parseInt(bookids[1]),
+			        url: './book/book.html',
+			        rect: {
+			            x: 0,
+			            y: 0,
+			            w: api.winWidth,
+			            h: api.winHeight
+			        },
+			        bgColor:"#F5F5F5",
+			        pageParam: {
+			            book_id: parseInt(bookids[1])
+			        },
+			        bounces: false,
+			        reload:true,
+			        vScrollBarEnabled: true,
+			        hScrollBarEnabled: false,
+			        animation:{
+			            type:"push",
+			            subType:"from_right",
+			            duration:300
+			        }       
+			    });
+		   }
+        }
+    });
+
+
+    api.addEventListener({
+       name:'offline'
+    }, function(ret, err){        
+        $api.removeCls($api.byId('nonetwork'),'aui-hide');
+    });
+    api.addEventListener({
+        name:'online'
+    }, function(ret, err){        
+        closeTips();
+    });
+    api.addEventListener({
+	    name: 'keyback'
+	}, function(ret, err) {
+		api.historyBack({}, function(ret, err) {
+    		if (!ret.status) {
+        		api.closeWin();
+    		}
+		});
+	});
+    if(api.connectionType != 'none' || ($api.getStorage('jingxuan') && !$api.isEmptyObject($api.getStorage('jingxuan')))){
+        openframe('jingxuan');
+    }else{
+        $api.removeCls($api.byId('nonetwork'),'aui-hide');
+    }
+    if(!$api.getStorage('appinfo') || $api.isEmptyObject($api.getStorage('appinfo'))){
+        $api.setStorage('appinfo',{appkey:indexSetting.appkey,url:indexSetting.url});
+    }
+    if(!$api.getStorage('userinfo') || $api.isEmptyObject($api.getStorage('userinfo'))){
+        $api.setStorage('userinfo',{avatar:"../image/liulangnan.png",uid:0,bbsuid:0,name:"游客",group:"登录帐号,记录点滴阅读",time:(new Date().getTime())});
+    }
+    initload();
+}
+
+function initload(){
+  api.ajax({
+        url: indexSetting.url+'api.php?appkey='+indexSetting.appkey+'&type=get&module=init',
+        method: 'get'
+    }, function(ret, err) {
+      if(ret.status){
+        var appinfo = ret.data;
+        appinfo.appkey = indexSetting.appkey;
+        appinfo.url    = indexSetting.url;
+        $api.setStorage('appinfo',appinfo);
+      }
+    });
+}
+function closeTips(){
+    $api.addCls($api.byId('nonetwork'),'aui-hide');
+}
+    
+function openframe(name){
+    api.openFrame({
+        name: name,
+        url: './book/'+name+'.html',
+        rect: {
+            x: 0,
+            y: 0,
+            w: api.winWidth,
+            h: api.winHeight-50
+        },
+        progress:{
+            type:"page"
+        },
+        bgColor:"#F5F5F5",
+        reload:false,
+        bounces: true,
+        vScrollBarEnabled: false,
+        hScrollBarEnabled: false  ,
+        animation:{
+            type:"push",
+            subType:"from_right",
+            duration:300
+        }
+    });
+}
+    function navbottom(){
+        indexSetting.NVTabBar = api.require('NVTabBar');
+        indexSetting.NVTabBar.open({
+            styles: {
+                bg: '#fefefe',         
+                h: 50 ,             
+                dividingLine: {     
+                   width: 0.5,      
+                   color: '#ccc'    
+                },
+                badge: {                       
+                    bgColor: '#ff0',
+                   numColor: '#fff',
+                   size: 6.0       
+                }
+             },
+             selectedIndex:1,
+             items: [{
+                w: api.winWidth/4.0,      
+                bg: {                     
+                   marginB: 0,           
+                   image: 'rgba(0,0,0,0)'
+                },
+                iconRect: {              
+                   w: 25.0,             
+                   h: 25.0,              
+                },
+                icon: {                  
+                    normal: 'widget://image/icon/shujia.png',           
+                    highlight: 'widget://image/icon/shujia_active.png',        
+                    selected: 'widget://image/icon/shujia_active.png'          
+                },
+                title: {               
+                   text: '书架',            
+                   size: 12.0,            
+                   normal: '#696969',   
+                   selected: '#03A9F4',    
+                   marginB: 6.0         
+                }
+            },{
+                w: api.winWidth/4.0,      
+                bg: {                     
+                   marginB: 0,           
+                   image: 'rgba(0,0,0,0)'
+                },
+                iconRect: {              
+                   w: 25.0,             
+                   h: 25.0,              
+                },
+                icon: {                  
+                    normal: 'widget://image/icon/jingxuan.png',           
+                    highlight: 'widget://image/icon/jingxuan_active.png',        
+                    selected: 'widget://image/icon/jingxuan_active.png'          
+                },
+                title: {               
+                   text: '精选',            
+                   size: 12.0,            
+                   normal: '#696969',   
+                   selected: '#03A9F4',    
+                   marginB: 6.0         
+                }
+            },{
+                w: api.winWidth/4.0,      
+                bg: {                     
+                   marginB: 0,           
+                   image: 'rgba(0,0,0,0)'
+                },
+                iconRect: {              
+                   w: 25.0,             
+                   h: 25.0,              
+                },
+                icon: {                  
+                    normal: 'widget://image/icon/shuku.png',           
+                    highlight: 'widget://image/icon/shuku_active.png',        
+                    selected: 'widget://image/icon/shuku_active.png'          
+                },
+                title: {               
+                   text: '书库',            
+                   size: 12.0,            
+                   normal: '#696969',   
+                   selected: '#03A9F4',    
+                   marginB: 6.0         
+                }
+            },{
+                w: api.winWidth/4.0,      
+                bg: {                     
+                   marginB: 0,           
+                   image: 'rgba(0,0,0,0)'
+                },
+                iconRect: {              
+                   w: 25.0,             
+                   h: 25.0,              
+                },
+                icon: {                  
+                    normal: 'widget://image/icon/faxian.png',           
+                    highlight: 'widget://image/icon/faxian_active.png',        
+                    selected: 'widget://image/icon/faxian_active.png'          
+                },
+                title: {               
+                   text: '发现',            
+                   size: 12.0,            
+                   normal: '#696969',   
+                   selected: '#03A9F4',    
+                   marginB: 6.0         
+                }
+            }]
+        }, function(ret, err){    
+            if( ret ){
+                if(ret.eventType=='click'){
+                  // alert('click')
+                    switch(ret.index){
+                        case 0:
+                           refreshframe('store');
+                        break;
+                        case 1:
+                          refreshframe('jingxuan');
+                        break;
+                        case 2:
+                          refreshframe('bookku');
+                        break;
+                        case 3:
+                          refreshframe('faxian');
+                        break;
+                    }
+                }
+            }
+        });
+    }
+  function refreshframe(name){
+    if(!$api.getStorage('nvtabbar') || ($api.getStorage('nvtabbar') != name)){
+       openframe(name);
+       $api.setStorage('nvtabbar',name);
+    }else{
+        api.execScript({
+            frameName: name,
+            script: 'document.body.scrollTop=0;api.refreshHeaderLoading()'
+        });
+    }
+  }
+</script>
+</html>

@@ -1,0 +1,198 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <meta name="format-detection" content="telephone=no,email=no,date=no,address=no">
+    <link rel="stylesheet" type="text/css" href="../css/aui.2.0.css" />
+    <link rel="stylesheet" type="text/css" href="../css/font-awesome.min.css" />
+    <style type="text/css">
+      #main .aui-list::after, #main .aui-list::before, #main .aui-list-item::after, #main .aui-list-item::before { height: 0;}
+    </style>
+</head>
+<body>
+<header class="aui-bar aui-bar-nav " id="header">
+    <div class="aui-title">书库</div>
+    <a class="aui-pull-right aui-btn" tapmode onclick="opensearch()">
+        <span class="aui-iconfont aui-icon-search"></span>
+    </a>
+</header>
+<div id="main"></div>
+<script type="text/x-dot-template" id="main-temp">
+  <div class="aui-info aui-margin-t-5 aui-padded-l-10 aui-padded-r-10">
+    <div class="aui-info-item" id="bookkuinfo">
+       <span class="aui-iconfont aui-icon-info"></span>
+        &nbsp;共有图书&nbsp;
+        <span class="aui-text-danger "> {{=it.nums.booknums}} </span>
+        &nbsp;册，本周新增&nbsp;
+        <span class="aui-text-danger"> {{=it.nums.weeknums}} </span>&nbsp;册
+    </div>
+  </div>
+  {{? it.categorys}}
+      <div class="aui-tab" id="tab">
+  {{ for(var i=0,len=it.categorys.length;i<len;i++) { }}
+          <div class="aui-tab-item {{? i<1}} aui-active{{?}}" data-id="{{=it.categorys[i].category_id}}" id="tab_{{=it.categorys[i].category_id}}">{{=it.categorys[i].category_name}}</div>
+  {{ } }}
+      </div>
+
+
+    {{ for(var i=0,len=it.categorys.length;i<len;i++) { }}
+        <ul class="aui-list aui-media-list {{? i>0}}aui-hide{{?}} catelist" id="tab_{{=it.categorys[i].category_id}}_menu">
+        {{ for(var j=0,jlen=it.categorys[i].sub.length;j<jlen;j++) { }}
+                    <li class="aui-list-item aui-list-item-middle aui-margin-b-10" tapmode onclick="opencategory({{=it.categorys[i].sub[j].category_id}},'{{=it.categorys[i].sub[j].category_name}}')">
+                        <div class="aui-media-list-item-inner ">
+                            <div class="aui-list-item-media">
+                                <img src="{{=indexSetting.url}}image/{{=it.categorys[i].sub[j].image}}" class="1aui-img-round aui-list-img-sm">
+                            </div>
+                            <div class="aui-list-item-inner aui-list-item-arrow">
+                                <div class="aui-list-item-text">
+                                    <div class="aui-list-item-title aui-font-size-14">{{=it.categorys[i].sub[j].category_name}}</div>
+                                    <div class="aui-list-item-right">
+                                    
+                                    </div>
+                                </div>
+                                <div class="aui-list-item-text {{? it.categorys[i].sub[j].weeknums > 0}}aui-text-danger{{?}}">
+                                    共{{=it.categorys[i].sub[j].nums}}册&nbsp;&nbsp;本周新增{{=it.categorys[i].sub[j].weeknums}}册
+                                </div>
+                            </div>
+                        </div>
+                    </li>
+            {{ } }}
+            </ul>
+    {{ } }}
+  {{?}}
+</script>
+<div class="aui-tips aui-margin-b-15 aui-hide" id="nonetwork" style="position:fixed;bottom:50px;left: 0;right:0;z-index: 9999;">
+    <i class="aui-iconfont aui-icon-info"></i>
+    <div class="aui-tips-title">当前没有网络连接</div>
+    <i class="aui-iconfont aui-icon-close" tapmode onclick="closeTips()"></i>
+</div>
+</body>
+<script type="text/javascript" src="../script/api.js"></script>
+<script type="text/javascript" src="../script/aui-tab.js"></script>
+<script type="text/javascript" src="../script/dot.js"></script>
+<script type="text/javascript">
+var indexSetting = $api.getStorage('appinfo');
+indexSetting.userinfo = $api.getStorage('userinfo');
+apiready = function(){
+    api.parseTapmode();
+    $api.fixStatusBar( $api.dom('header') );
+    indexSetting.activity = api.require('UILoading');
+    indexSetting.activity.keyFrame({
+        rect: {
+            w: 80,
+            h: 80
+        },
+        styles: {
+            bg: 'rgba(0,0,0,0.5)',
+            corner: 15,
+            interval: 50,
+            frame: {
+                w: 80,
+                h: 80
+            }
+        }
+    }, function(ret) {});
+    api.addEventListener({
+       name:'offline'
+    }, function(ret, err){        
+        $api.removeCls($api.byId('nonetwork'),'aui-hide');
+    });
+    api.addEventListener({
+        name:'online'
+    }, function(ret, err){
+        closeTips();
+    });
+
+    if(api.connectionType == 'none'){
+        api.toast({
+            msg: '没有网络',
+            duration: 2000,
+            location: 'top'
+        });
+        $api.removeCls($api.byId('nonetwork'),'aui-hide');
+    }else{
+        initload();
+        api.setRefreshHeaderInfo({
+          visible: true,
+          bgColor: '#ccc',
+          textColor: '#fff',
+          textDown: '下拉刷新...',
+          textUp: '松开刷新...',
+          showTime: true
+        }, function(ret, err) {
+          ajaxuser();
+          indexSetting.jingxuanrefresh = (new Date().getTime());
+          initload();
+          api.refreshHeaderLoadDone()
+        });
+    }
+};
+function closeTips(){
+    $api.addCls($api.byId('nonetwork'),'aui-hide');
+}
+function initload(){
+  api.ajax({
+    url: indexSetting.url+'api.php?appkey='+indexSetting.appkey+'&type=get&module=bookku',
+      method: 'get'
+  }, function(ret, err) {
+      if(ret.status){
+        var temp = $api.text($api.byId("main-temp"));
+        var dottemp = doT.template(temp);
+        var html = dottemp(ret);
+        $api.html($api.byId('main'),html);
+        indexSetting.activity.closeKeyFrame();
+        var tab = new auiTab({
+               element:document.getElementById("tab"),
+               index:1,
+               repeatClick:false
+           },function(ret2){
+               var id = $api.attr(ret2.dom,'data-id');
+               var domall = $api.domAll(".catelist");
+               if(domall){
+                  for(var i=0,len=domall.length;i<len;i++){
+                    $api.addCls(domall[i],'aui-hide');
+                  }
+                  $api.removeCls($api.byId('tab_'+id+'_menu'),'aui-hide')
+               }
+        });
+      }else{
+        api.toast({
+            msg: ret.error,
+            duration: 2000,
+            location: 'top'
+        });
+        indexSetting.activity.closeKeyFrame();
+      }
+  });
+}
+
+//打开分类
+function opencategory(category_id,category_name){
+  api.openWin({
+      name: 'category',
+      url: './category.html',
+      rect: {
+          x: 0,
+          y: 0,
+          w: api.winWidth,
+          h: api.winHeight
+      },
+      bgColor:"#F5F5F5",
+      pageParam: {
+          category_id:category_id,
+          category_name:category_name
+      },
+      bounces: false,
+      vScrollBarEnabled: true,
+      hScrollBarEnabled: false,
+      animation:{
+          type:"push",
+          subType:"from_right",
+          duration:300
+      },
+      reload:true
+  });
+}
+</script>
+</html>

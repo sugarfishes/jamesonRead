@@ -1,0 +1,500 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <meta name="format-detection" content="telephone=no,email=no,date=no,address=no">
+    <link rel="stylesheet" type="text/css" href="../css/aui.2.0.css" />
+    <link rel="stylesheet" type="text/css" href="../css/font-awesome.min.css" />
+    <style type="text/css">
+        #header { position: fixed;}
+    </style>
+</head>
+<body>
+<header class="aui-bar aui-bar-nav" id="header">
+    <a class="aui-pull-left aui-btn" tapmode onclick="back()">
+        <span class="aui-iconfont aui-icon-left"></span>
+    </a>
+    <div class="aui-title" id="title"></div>
+    <a class="aui-pull-right aui-btn" tapmode onclick="opensearch()">
+        <span class="aui-iconfont aui-icon-search"></span>
+    </a>
+</header>
+<div id="main">
+  <div style="height: 220px;">&nbsp;</div>
+  <div id="loginstatus"></div>
+   <ul class="aui-list aui-list-in aui-margin-t-10">
+        <li class="aui-list-item" tapmode onclick="openframe('chongzhi')">
+           <div class="aui-list-item-inner aui-list-item-arrow">
+               <div class="aui-list-item-title"><i class="fa fa-trophy fa-lg fa-fw aui-text-danger"></i>充值</div>
+               <div class="aui-list-item-right">
+                   <div class="aui-text-default"></div>
+               </div>
+           </div>
+        </li>
+        <li class="aui-list-item" tapmode onclick="openframe('hasbuybook')">
+           <div class="aui-list-item-inner aui-list-item-arrow">
+               <div class="aui-list-item-title"><i class="fa fa-trophy fa-lg fa-fw aui-text-danger"></i>已购买的图书</div>
+               <div class="aui-list-item-right">
+                   <div class="aui-text-default">查看整本购买的图书</div>
+               </div>
+           </div>
+        </li>
+        <li class="aui-list-item" tapmode onclick="openframe('hasbuytid')">
+           <div class="aui-list-item-inner aui-list-item-arrow">
+               <div class="aui-list-item-title"><i class="fa fa-trophy fa-lg fa-fw aui-text-danger"></i>已购买的章节</div>
+               <div class="aui-list-item-right">
+                   <div class="aui-text-default">查看单独购买的章节</div>
+               </div>
+           </div>
+        </li>
+        <li class="aui-list-item" tapmode onclick="openframe('myfavores')">
+           <div class="aui-list-item-inner aui-list-item-arrow">
+               <div class="aui-list-item-title"><i class="fa fa-trophy fa-lg fa-fw aui-text-danger"></i>收藏的图书</div>
+               <div class="aui-list-item-right">
+                   <div class="aui-text-default">所有收藏的图书</div>
+               </div>
+           </div>
+        </li>
+        <li class="aui-list-item" tapmode onclick="openframe('myguanzhu')">
+           <div class="aui-list-item-inner aui-list-item-arrow">
+               <div class="aui-list-item-title"><i class="fa fa-trophy fa-lg fa-fw aui-text-danger"></i>关注的作者</div>
+               <div class="aui-list-item-right">
+                   <div class="aui-text-default">关注的作者列表</div>
+               </div>
+           </div>
+        </li>
+    </ul>
+    <div id="logoutbutton" class="aui-content-padded aui-margin-t-10 aui-hide" onclick="logout()">
+        <div class="aui-btn aui-btn-block aui-btn-danger">退出登录</div>
+    </div>
+</div>
+<script type="text/x-dot-template" id="logintype-temp">
+  <div class="aui-card-list aui-margin-b-0">
+    <div class="aui-card-list-header aui-text-center">当前使用<span class="aui-text-primary">{{? it.dqlogintype=='qq'}}[QQ]{{?? it.dqlogintype == 'wx'}}[微信]{{??}}[论坛]{{?}}</span>帐号 <span class="aui-text-danger">{{=it.name}}</span>登录</div>
+    {{? it.dqlogintype != 'forum'}}
+    <div class="aui-card-list-content-padded aui-text-center">
+        {{? it.bbsuid > 0}}
+          <div class="aui-btn aui-btn-sm aui-btn-block aui-btn-success">已绑定论坛帐号 {{=it.forumname}} <span tapmode onclick="jiechubangding()" class="  aui-text-warning fa fa-unlock fa-fw ">解绑</span></div>
+        {{??}}
+          <div class="aui-btn aui-btn-success"  onclick="gobind()">绑定已有论坛帐号</div>
+          <div class="aui-btn aui-btn-danger aui-margin-l-5"  onclick="fastreg()">一键注册赠金钱</div>
+        {{?}}
+    </div>
+    {{?}}
+  </div>
+</script>
+</body>
+<script type="text/javascript" src="../script/api.js"></script>
+<script type="text/javascript" src="../script/dot.js"></script>
+<script type="text/javascript">
+  var indexSetting = $api.getStorage('appinfo');
+  indexSetting.first = false;
+  apiready = function(){
+    api.parseTapmode();
+    $api.fixStatusBar( $api.dom('header') );
+    $api.css($api.byId('main'),'margin-top:'+$api.offset($api.dom('header')).h+'px');
+    api.addEventListener({
+        name: 'keyback'
+    }, function(ret, err) {
+      if(ret){
+        back();
+      }
+    });    
+    indexSetting.userinfo = $api.getStorage('userinfo');
+    indexSetting.from = api.pageParam.from;
+    indexSetting.book_id= api.pageParam.book_id;
+    indexSetting.activity = api.require('UILoading');
+    $api.text($api.byId('title'),indexSetting.userinfo.name);
+    initload();
+   
+    if(indexSetting.userinfo.uid){
+       $api.removeCls($api.byId('logoutbutton'),'aui-hide');
+    }
+    api.setRefreshHeaderInfo({
+	    visible: true,
+	    bgColor: '#ccc',
+	    textColor: '#fff',
+	    textDown: '下拉刷新...',
+	    textUp: '松开刷新...',
+	    showTime: true
+	}, function(ret, err) {
+		  initload();
+		  var temp = $api.text($api.byId("logintype-temp"));
+		  var dottemp = doT.template(temp);
+		  var html = dottemp($api.getStorage('userinfo'));
+		  $api.html($api.byId('loginstatus'),html);
+		  api.refreshHeaderLoadDone()
+	 });
+  };
+function logout(){
+  $api.setStorage('userinfo',{avatar:"../image/liulangnan.png",uid:0,bbsuid:0,name:"游客",group:"登录帐号,记录点滴阅读",time:(new Date().getTime())});
+  api.execScript({
+	   name: 'root',
+	   frameName: 'store',
+	   script: "$api.attr($api.byId('avatar'),'src','../image/liulangnan.png');"
+  });
+  api.toast({msg:"已退出登录",duration:3000,location:"top"});
+  back();
+}
+function fastreg (){
+	indexSetting.userinfo = $api.getStorage('userinfo');
+	indexSetting.activity.keyFrame({
+              rect: {
+                  w: 80,
+                  h: 80
+              },
+              styles: {
+                  bg: 'rgba(0,0,0,0.5)',
+                  corner: 15,
+                  interval: 50,
+                  frame: {
+                      w: 80,
+                      h: 80
+                  }
+              }
+    }, function(ret) {});
+	api.ajax({
+       url: indexSetting.url+'api.php?appkey='+indexSetting.appkey+'&type=get&module=fastreg&param=nickname----'+indexSetting.userinfo.name+',openid----'+indexSetting.userinfo.uid+',dqlogintype----'+indexSetting.userinfo.dqlogintype,
+       method: 'get'
+     }, function(ret2, err2) {
+        if(ret2){
+            indexSetting.activity.closeKeyFrame();
+            if(ret2.status){
+                ret2.data.avatar = indexSetting.userinfo.avatar;
+                $api.setStorage('userinfo',ret2.data);
+                indexSetting.userinfo = ret2.data;
+                api.refreshHeaderLoading();
+			    if(indexSetting.from == 'store'){
+			      	api.execScript({
+            		  name: 'root',
+            		  frameName: 'store',
+            		  script: "indexSetting.userinfo=$api.getStorage('userinfo');api.refreshHeaderLoading();"
+            		});
+			    }else if(indexSetting.from == 'book'){
+                    api.execScript({
+                      name: 'book_'+indexSetting.book_id,
+                      script: "api.refreshHeaderLoading();"
+                    });
+                }else if(indexSetting.from=='read'){
+                    api.execScript({
+                      name: indexSetting.from,
+                      script: "indexSetting.userinfo=$api.getStorage('userinfo');"
+                    });
+                }else{
+                    api.execScript({
+                      name: indexSetting.from,
+                      script: "indexSetting.userinfo=$api.getStorage('userinfo');api.refreshHeaderLoading();"
+                    });
+                }
+                api.alert({
+				    title: '成功注册并绑定论坛帐号',
+				    msg: "论坛帐号:"+ret2.user+",密码:123456\n可用此帐号在论坛登录",
+				}, function(ret, err) {});
+			    back();
+            }else{
+               alert('一键注册失败，请重试');
+            }
+         }else{
+           alert(err2.msg)
+         }
+    });
+}
+function gobind(){
+  var dialogBox = api.require('dialogBox');
+  dialogBox.list({
+      tapClose: true,
+      texts: {
+          title: '绑定论坛帐号',
+          enter: '绑定'
+      },
+      listTitles: ['用户名:', '密  码:'],
+      styles: {
+          bg: '#fff',
+          corner: 20,
+          w: 300,
+          h: 280,
+          title: {
+              h: 50,
+              size: 16,
+              color: '#000'
+          },
+          list: {
+              h: 120,
+              row: 2,
+              title: {
+                  marginL: 10,
+                  size: 14,
+                  color: '#696969'
+              },
+              content: {
+                  marginL: 10,
+                  size: 14,
+                  color: '#000'
+              }
+          },
+          dividingLine: {
+              width: 1,
+              color: '#f5f6f7'
+          },
+          enter: {
+              w: 135,
+              h: 40,
+              bg: '#03A9F4',
+              color: '#fff',
+              size: 14
+          }
+      }
+  }, function(ret) {
+      if (ret.eventType == 'enter') {
+          if(!ret.amount[0] || !ret.amount[1]){
+            api.toast({
+              msg:"用户名或密码不得为空",
+              duration:2000,
+              location:"top"
+            });
+          }
+          indexSetting.activity.keyFrame({
+              rect: {
+                  w: 80,
+                  h: 80
+              },
+              styles: {
+                  bg: 'rgba(0,0,0,0.5)',
+                  corner: 15,
+                  interval: 50,
+                  frame: {
+                      w: 80,
+                      h: 80
+                  }
+              }
+          }, function(ret) {});
+          var binddata = '';
+          if(indexSetting.userinfo.uid){
+             binddata += 'openid----'+indexSetting.userinfo.uid+',logintype----'+indexSetting.userinfo.dqlogintype+',nickname----'+(indexSetting.userinfo.name)+',';
+          }
+          api.ajax({
+            url: indexSetting.url+'api.php?appkey='+indexSetting.appkey+'&type=get&module=login&param=loginaction----bind,'+binddata+'username----'+(ret.amount[0])+',pass----'+('uslzkw'+ret.amount[1]+'aqlcje'),
+              method: 'get'
+          }, function(ret2, err2) {
+          if(ret2){
+            indexSetting.activity.closeKeyFrame();
+            if(ret2.status){
+                api.toast({
+                    msg: '绑定成功',
+                    duration: 2000,
+                    location: 'top'
+                })
+                ret2.data.avatar = indexSetting.userinfo.avatar;
+                ret2.data.dqlogintype = indexSetting.userinfo.dqlogintype;
+                ret2.data.name = indexSetting.userinfo.name;
+                $api.setStorage('userinfo',ret2.data);
+                indexSetting.userinfo = ret2.data;
+                api.refreshHeaderLoading();
+			      if(indexSetting.from == 'store'){
+			      	api.execScript({
+            			 	  name: 'root',
+            				  frameName: 'store',
+            				  script: "indexSetting.userinfo=$api.getStorage('userinfo');api.refreshHeaderLoading();$api.attr($api.byId('avatar'),'src','"+ret2.data.avatar+"');"
+            			  });
+			      }else if(indexSetting.from == 'book'){
+                        api.execScript({
+                          name: 'book_'+indexSetting.book_id,
+                          script: "api.refreshHeaderLoading();"
+                        });
+                    }else if(indexSetting.from=='read'){
+                    	api.execScript({
+                          name: indexSetting.from,
+                          script: "indexSetting.userinfo=$api.getStorage('userinfo');"
+                        });
+                    }else{
+                          api.execScript({
+                            name: indexSetting.from,
+                            script: "indexSetting.userinfo=$api.getStorage('userinfo');api.refreshHeaderLoading();"
+                          });
+                      }
+			    	 back();
+			   
+            }else{
+               alert(ret2.error);
+            }
+          }else{
+            alert(err2.msg)
+          }
+        });
+          var dialogBox = api.require('dialogBox');
+              dialogBox.close({
+                dialogName: 'list'
+          });
+      }
+  });
+}
+function initload(){
+  indexSetting.userinfo = $api.getStorage('userinfo');
+  var temp = $api.text($api.byId("logintype-temp"));
+  var dottemp = doT.template(temp);
+  var html = dottemp(indexSetting.userinfo);
+  $api.html($api.byId('loginstatus'),html);
+  if(indexSetting.userinfo.bbsuid){
+    api.ajax({
+        url: indexSetting.url+'api.php?appkey='+indexSetting.appkey+'&type=get&module=user&param=bbsuid----'+indexSetting.userinfo.bbsuid,
+        method: 'get'
+    }, function(ret, err) {
+        if (ret) {
+            showuser(ret);
+            var userinfo = $api.getStorage('userinfo');
+            userinfo.trameid = ret.trameid;
+            userinfo.trametitle = ret.trametitle;
+            userinfo.tramefield = ret.tramefield;
+            userinfo.tramenums = ret.tramenums;
+            userinfo.dstrameid = ret.dstrameid;
+            userinfo.dstrametitle = ret.dstrametitle;
+            userinfo.dstramefield = ret.dstramefield;
+            userinfo.dstramenums = ret.dstramenums;
+            $api.setStorage('userinfo',userinfo);            
+        } else {
+            api.toast({
+              msg: err.msg,
+              duration: 2000,
+              location: 'top'
+          });
+        }
+    });
+  }else{
+    showuser({shoucang:0});
+  }
+}
+function showuser(info){
+  var personalCenter = api.require('personalCenter');
+ 
+  if(indexSetting.userinfo.bbsuid < 1){
+  	if($api.getStorage('localstore')){
+  		var localstore = $api.getStorage('localstore');
+  	 	info.shoucang = parseInt(localstore.data.length);
+  	}
+  }
+  
+  var btnArray = [
+      {
+          'bgImg': 'widget://image/icon/trans.png',
+          'selectedImg': 'widget://image/icon/trans2.png',
+          'lightImg': 'widget://image/icon/trans2.png',
+          'title': indexSetting.userinfo.dstrametitle,
+          'count':indexSetting.userinfo.dstramenums,
+          "titleColor":"#ffffff",
+          "titleLightColor":"#ffffff",
+          "countColor":"#ffffff",
+          "countLightColor":"#ffffff"
+      },
+      {
+          'bgImg': 'widget://image/icon/trans.png',
+          'selectedImg': 'widget://image/icon/trans2.png',
+          'lightImg': 'widget://image/icon/trans2.png',
+          'title': '收藏',
+          'count': info.shoucang,
+          "titleColor":"#ffffff",
+          "titleLightColor":"#ffffff",
+          "countColor":"#ffffff",
+          "countLightColor":"#ffffff"
+      },
+      {
+          'bgImg': 'widget://image/icon/trans.png',
+          'selectedImg': 'widget://image/icon/trans2.png',
+          'lightImg': 'widget://image/icon/trans2.png',
+          'title': indexSetting.userinfo.trametitle,
+          'count': indexSetting.userinfo.tramenums,
+          "titleColor":"#ffffff",
+          "titleLightColor":"#ffffff",
+          "countColor":"#ffffff",
+          "countLightColor":"#ffffff"
+      }
+  ];
+  personalCenter.open({
+      'y': parseInt($api.offset($api.byId('header')).h),
+      'imgPath': indexSetting.userinfo.avatar,
+      'placeholderImg': 'widget://image/liulangnan.png',
+      'userName': indexSetting.userinfo.name,
+      'count': 0,
+      fixedOn: api.frameName,
+      'btnArray': btnArray,
+      'showLeftBtn':false,
+      'showRightBtn':false,
+      'userNameSize':16,
+      'userColor':'#ffff00',
+      'subTitle':"",
+      'fixed':false
+
+  },function(ret,err){
+    if(ret.click == 1){
+      openframe('myfavores');
+    }
+  });
+  if(indexSetting.first === false){
+  	 	 setTimeout(function(){
+    		api.refreshHeaderLoading();
+    	 },100);
+  	 	indexSetting.first = true;
+  	 }
+}
+function openframe(name){
+  if(name == 'chongzhi'){
+    alert('客户端暂未开通此功能，请去PC端充值');
+    return;
+  }
+  api.openWin({
+      name: name,
+      url: './'+name+'.html',
+      rect: {
+          x: 0,
+          y: 0,
+          w: api.winWidth,
+          h: api.winHeight
+      },
+      reload:true,
+      bgColor:"#F5F5F5",
+      bounces: false,
+      vScrollBarEnabled: true,
+      hScrollBarEnabled: false,
+      animation:{
+        type:"push",
+        subType:"from_right",
+        duration:300
+      }
+  });
+}
+function jiechubangding () {
+  if(confirm('解除绑定后你无法阅读付费章节和打赏等功能?')){
+      indexSetting.userinfo = $api.getStorage('userinfo');
+      api.ajax({
+          url: indexSetting.url+'api.php?appkey='+indexSetting.appkey+'&type=get&module=unbind&param=bbsuid----'+indexSetting.userinfo.bbsuid+',dqlogintype----'+indexSetting.userinfo.dqlogintype+',openid----'+indexSetting.userinfo.uid,
+          method: 'get'
+      }, function(ret, err) {
+          if(ret.status){
+            api.toast({
+              msg: '解绑成功',
+              duration: 2000,
+              location: 'top'
+            });
+            indexSetting.userinfo.tramenums = 0;
+            indexSetting.userinfo.dstramenums = 0;
+            indexSetting.userinfo.bbsuid = 0;
+            indexSetting.userinfo.forumname = null;
+            $api.setStorage('userinfo',indexSetting.userinfo);
+            api.execScript({
+                name: 'root',
+                frameName: 'store',
+                script: 'indexSetting.userinfo=$api.getStorage("userinfo");api.refreshHeaderLoading();'
+            });
+            back();
+          }else{
+            api.toast({
+              msg: '解绑失败请重试',
+              duration: 2000,
+              location: 'top'
+            });
+          }
+      });
+  }
+}
+</script>
+</html>

@@ -1,0 +1,154 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <meta name="format-detection" content="telephone=no,email=no,date=no,address=no">
+    <link rel="stylesheet" type="text/css" href="../css/aui.2.0.css" />
+    <link rel="stylesheet" type="text/css" href="../css/font-awesome.min.css" />
+    <style type="text/css">
+        #header { position: fixed;left: 0;right: 0;}
+        #main .bodylist li { min-height: auto;}
+        #main .bodylist .aui-list-item-inner { min-height: auto;padding-bottom:0;padding-top: 0;}
+        #main .aui-list::after, #main .aui-list::before, #main .aui-list-item::after, #main .aui-list-item::before { height: 0;}
+    </style>
+</head>
+<body>
+<header class="aui-bar aui-bar-nav" id="header">
+    <a class="aui-pull-left aui-btn" tapmode onclick="back()">
+        <span class="aui-iconfont aui-icon-left"></span>
+    </a>
+    <div class="aui-title">排行榜</div>
+    <a class="aui-pull-right aui-btn" tapmode onclick="opensearch()">
+        <span class="aui-iconfont aui-icon-search"></span>
+    </a>
+</header>
+<div id="main"></div>
+<script id="main-temp"  type="text/x-dot-template">
+{{? it.phdata}}
+    <ul class="aui-list aui-media-list">
+    {{ for(var i=0,len=it.phdata.length;i<len;i++) { }}
+        <li class="aui-list-item aui-margin-b-10" tapmode onclick="paihanginfo({{=it.phdata[i].id}},'{{=it.phdata[i].phname}}')">
+            <div class="aui-media-list-item-inner aui-list-item-arrow">
+                <div class="aui-list-item-media">
+                    <img src="{{=indexSetting.url}}{{=it.phdata[i].image}}">
+                </div>
+                <div class="aui-list-item-inner">
+                    <div class="aui-list-item-text">
+                        <ul class="aui-list bodylist aui-margin-t-5">
+                        {{ for(var j=0,jlen=it.phdata[i].data.length;j<jlen;j++){ }}
+                            <li class="aui-list-item" style="box-shadow: none;margin-bottom: auto;">
+                                <div class="aui-list-item-inner">
+                                    <div class="aui-list-item-title">
+                                    <i class="aui-text-danger aui-margin-r-5">{{=(j+1)}}</i> {{=it.phdata[i].data[j].book_name}}
+                                    </div>
+                                </div>
+                            </li>
+                        {{ } }}
+                        </ul>                       
+                    </div>
+                </div>
+            </div>
+        </li>
+    {{ } }}
+    </ul>
+{{??}}
+<li class="aui-list-header">当前无排行数据</li>
+{{?}}
+</script>
+</body>
+<script type="text/javascript" src="../script/api.js"></script>
+<script type="text/javascript" src="../script/dot.js"></script>
+<script type="text/javascript">
+var indexSetting = $api.getStorage('appinfo');
+indexSetting.userinfo = $api.getStorage('userinfo');
+    apiready = function(){
+        api.parseTapmode();
+        $api.fixStatusBar( $api.dom('header') );
+        $api.css($api.byId('main'),'margin-top:'+$api.offset($api.dom('header')).h+'px');
+        api.addEventListener({
+		    name: 'keyback'
+		}, function(ret, err) {
+		    if(ret){
+		    	back();
+		    }
+		});        
+        indexSetting.activity = api.require('UILoading');
+            indexSetting.activity.keyFrame({
+                rect: {
+                    w: 80,
+                    h: 80
+                },
+                styles: {
+                    bg: 'rgba(0,0,0,0.5)',
+                    corner: 15,
+                    interval: 50,
+                    frame: {
+                        w: 80,
+                        h: 80
+                    }
+                }
+            }, function(ret) {});
+        initload();
+        api.setRefreshHeaderInfo({
+            visible: true,
+            bgColor: '#ccc',
+            textColor: '#fff',
+            textDown: '下拉刷新...',
+            textUp: '松开刷新...',
+            showTime: true
+        }, function(ret, err) {
+            ajaxuser();
+            initload();
+            api.refreshHeaderLoadDone()
+        });
+    };
+    //  初始化 
+    function initload(){
+        api.ajax({
+            url: indexSetting.url+'api.php?appkey='+indexSetting.appkey+'&type=get&module=paihang',
+            method: 'get'
+        }, function(ret, err) {
+            if (ret) {
+                var temp = $api.text($api.byId("main-temp"));
+                var dottemp = doT.template(temp);
+                var html = dottemp(ret);
+                $api.html($api.byId('main'),html);
+                indexSetting.activity.closeKeyFrame();
+            } else {
+                api.toast({
+                    msg: err.msg,
+                    duration: 2000,
+                    location: 'top'
+                });
+                indexSetting.activity.closeKeyFrame();
+            }
+        });
+    }
+function paihanginfo(id,name){
+  api.openWin({
+      name: 'paihanginfo',
+      url: './paihanginfo.html',
+      rect: {
+          x: 0,
+          y: 0,
+          w: api.winWidth,
+          h: api.winHeight
+      },
+      pageParam:{
+        paihangid:id,
+        name:name
+      },
+      reload:true,
+      bounces: false,
+      vScrollBarEnabled: true,
+      hScrollBarEnabled: false,
+      animation:{
+        type:"push",
+        subType:"from_right",
+        duration:300
+      }
+  });
+}
+</script>
+</html>

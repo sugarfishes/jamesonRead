@@ -1,0 +1,399 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <meta name="format-detection" content="telephone=no,email=no,date=no,address=no">
+    <link rel="stylesheet" type="text/css" href="../css/aui.2.0.css" />
+    <link rel="stylesheet" type="text/css" href="../css/font-awesome.min.css" />
+    <style type="text/css">
+    	#header { position: fixed;z-index: 9999;width:100%;left:0;right:0;}
+    	#header.transparent {background:transparent;}
+      #mainlist { padding-bottom: 50px}
+      #loading {margin-bottom:30px;}
+      .aui-info-item .aui-label { margin-left: 0.2rem;}
+      #main .advimg { background:#fff;}
+      #main .advimg .aui-content-padded { overflow:hidden; margin-left:0.5rem;margin-right:0.5rem; }
+      #main .advtitle {margin:8px auto 5px;color:#757575;}
+      #main .advimg img {width:100%;}
+     
+      #main .aui-list::after, #main .aui-list::before, #main .aui-list-item::after, #main .aui-list-item::before { height: 0;}
+      .randombook { text-align: center; background:#fff;padding-top:10px;padding-bottom:10px;}
+      .randombook .aui-row { display: block;margin:auto;width: 100%;}
+      .randombook .aui-col-xs-4 .hyhimg { display: block;margin: auto;}
+      #main .aui-ellipsis-1 {display:inline-block;width:95%;overflow:hidden;text-overflow:ellipsis;white-space: nowrap;}
+
+    </style>
+</head>
+<body>
+<header class="aui-bar aui-bar-nav aui-hide" id="header">
+	<a class="aui-pull-left aui-btn" tapmode onclick="erweima()">
+        <span class="fa fa-fw fa-qrcode"></span>
+    </a>
+    <div class="aui-title">精选</div>
+    <a class="aui-pull-right aui-btn" tapmode onclick="opensearch()">
+        <span class="aui-iconfont aui-icon-search"></span>
+    </a>
+</header>
+<div id="main"></div>
+<script id="main-temp" type="text/x-dot-template">
+{{? it.databook}}
+<ul class="aui-list aui-media-list" id="indexlist">
+{{ for(var i=0,len=it.databook.length;i<len;i++) { }}
+    <li class="aui-list-item aui-margin-b-10" tapmode onclick="openbook({{=it.databook[i].book_id}})">
+        <div class="aui-media-list-item-inner">
+            <div class="aui-list-item-media">
+                <img src="{{? it.databook[i].image}}{{=indexSetting.url}}../data/attachment/forum/{{=it.databook[i].image}}{{??}}../image/book.png{{?}}">
+            </div>
+            <div class="aui-list-item-inner">
+                <div class="aui-list-item-text">
+                    <div class="aui-list-item-title">
+                        {{=it.databook[i].book_name}}
+                    </div>
+                    <div class="aui-list-item-right"></div>
+                </div>
+                <div class="aui-list-item-text">
+                    {{=it.databook[i].desco || ''}}
+                </div>
+                <div class="aui-info aui-margin-t-10" style="">
+                    <div class="aui-info-item">
+                        <img src="{{? it.databook[i].avatar}}{{=it.databook[i].avatar}}{{??}}../image/liulangnan.png{{?}}" style="width:1rem" class="aui-img-round" />
+                        <span class="aui-margin-l-5">{{=it.databook[i].author}}</span>
+                        </div>
+                    <div class="aui-info-item">
+                        <span class="">已更新{{=it.databook[i].colums}}章</span>
+                        <span class="aui-label  aui-label-warning aui-label-outlined">{{=it.databook[i].category_name}}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </li>
+    {{? i==4}}
+        <li class="advimg aui-hide aui-margin-b-10" id="booklistadv_{{=indexSetting.current}}"></li>
+    {{?}}
+    {{? i==8}}
+        <li class="randombook aui-hide aui-margin-b-10" id="randombook_{{=indexSetting.current}}"></li>
+    {{?}}
+{{ } }}
+</ul>
+{{?}}
+<div id="loading" class="aui-text-center"><span class=" fa fa-spinner fa-spin fa-2x"></span></div>
+</script>
+<script type="text/x-dot-template" id="indexlist-temp">
+{{? it.databook}}
+    {{ for(var i=0,len=it.databook.length;i<len;i++) { }}
+        <li class="aui-list-item aui-margin-b-10 "  tapmode onclick="openbook({{=it.databook[i].book_id}})">
+            <div class="aui-media-list-item-inner">
+                <div class="aui-list-item-media">
+                    <img src="{{? it.databook[i].image}}{{=indexSetting.url}}../data/attachment/forum/{{=it.databook[i].image}}{{??}}../image/book.png{{?}}">
+                </div>
+                <div class="aui-list-item-inner">
+                    <div class="aui-list-item-text">
+                        <div class="aui-list-item-title">{{=it.databook[i].book_name}}</div>
+                        <div class="aui-list-item-right"></div>
+                    </div>
+                    <div class="aui-list-item-text">
+                        {{=it.databook[i].desco || ''}}
+                    </div>
+                    <div class="aui-info aui-margin-t-10" style="">
+                        <div class="aui-info-item">
+                            <img src="{{? it.databook[i].avatar}}{{=it.databook[i].avatar}}{{??}}../image/liulangnan.png{{?}}" style="width:1rem" class="aui-img-round" />
+                            <span class="aui-margin-l-5">{{=it.databook[i].author}}</span>
+                        </div>
+                        <div class="aui-info-item">
+                            <span class="">
+                                已更新{{=it.databook[i].colums}}章
+                            </span>
+                            <span class="aui-label  aui-label-warning aui-label-outlined">
+                                {{=it.databook[i].category_name}}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </li>
+        {{? i==4}}
+        <li class="advimg aui-hide aui-margin-b-10" id="booklistadv_{{=indexSetting.current}}"></li>
+        {{?}}
+        {{? i==8}}
+            <li class="randombook aui-hide aui-margin-b-10" id="randombook_{{=indexSetting.current}}"></li>
+        {{?}}
+    {{ } }}
+{{?}}
+</script>
+<script type="text/x-dot-template" id="huanyihuan-temp">
+    <div class="aui-row">
+    {{ for(var m=0,mlen=it.books.length;m<mlen;m++) { }}
+    <div class="aui-col-xs-4 aui-text-center" tapmode onclick="openbook({{=it.books[m].book_id}})">
+            <img src="{{? it.books[m].image}}{{=indexSetting.url}}../data/attachment/forum/{{=it.books[m].image}}{{??}}../image/book.png{{?}}" class="hyhimg" style="width:80%;" >
+            <span class="aui-ellipsis-1 aui-text-center aui-font-size-14">{{=it.books[m].book_name}}</span>
+    </div>
+    {{ } }}
+    </div>
+</script>
+<div class="aui-tips aui-margin-b-15 aui-hide" id="nonetwork" style="position:fixed;bottom:50px;left: 0;right:0;z-index: 9999;">
+    <i class="aui-iconfont aui-icon-info"></i>
+    <div class="aui-tips-title">当前没有网络连接</div>
+    <i class="aui-iconfont aui-icon-close" tapmode onclick="closeTips()"></i>
+</div>
+<span id="jingxuanframe" class="aui-hide"></span>
+</body>
+<script type="text/javascript" src="../script/api.js"></script>
+<script type="text/javascript" src="../script/aui-scroll.js"></script>
+<script type="text/javascript" src="../script/dot.js"></script>
+<script type="text/javascript">
+var indexSetting = $api.getStorage('appinfo');
+indexSetting.userinfo = $api.getStorage('userinfo');
+indexSetting.loading = false;
+indexSetting.current = 1;
+indexSetting.total = 2;
+indexSetting.startindex = 0;
+apiready = function () {
+	$api.fixStatusBar($api.dom('header'));
+    api.parseTapmode();
+    if(api.statusBarAppearance){
+    	if(api.systemType == 'android'){
+    		indexSetting.statbar = 25;
+    	}else{
+    		indexSetting.statbar = 20;
+    	}
+    	api.setStatusBarStyle({
+		    style: 'dark'
+		});
+    }else{
+    	indexSetting.statbar = 0;
+    }
+    $api.css($api.byId('main'),'margin-top:'+(180+indexSetting.statbar)+'px');
+    indexSetting.activity = api.require('UILoading');
+    indexSetting.activity.keyFrame({
+        rect: {
+            w: 80,
+            h: 80
+        },
+        styles: {
+            bg: 'rgba(0,0,0,0.5)',
+            corner: 15,
+            interval: 50,
+            frame: {
+                w: 80,
+                h: 80
+            }
+        }
+    }, function(ret) {});
+    api.addEventListener({
+       name:'offline'
+    }, function(ret, err){        
+        $api.removeCls($api.byId('nonetwork'),'aui-hide');
+    });
+    api.addEventListener({
+        name:'online'
+    }, function(ret, err){
+        closeTips();
+    });
+	initload(); 
+    api.setRefreshHeaderInfo({
+        visible: true,
+        bgColor: '#ccc',
+        textColor: '#fff',
+        textDown: '下拉刷新...',
+        textUp: '松开刷新...',
+        showTime: true
+    }, function(ret, err) {
+        ajaxuser();
+        indexSetting.uerinfo = $api.getStorage('userinfo');
+        initload();
+        api.refreshHeaderLoadDone()
+    });
+
+    //	无限加载
+  	var scroll = new auiScroll({
+      listen:true,
+      distance:20
+    },function(ret){
+    	if(ret.scrollTop > 50){
+          	$api.removeCls($api.byId('header'),'aui-hide');
+        }else{
+           	$api.addCls($api.byId('header'),'aui-hide');
+        }
+        if(ret.isToBottom && !indexSetting.loading){
+            indexSetting.loading = true;
+            if(api.connectionType == 'none'){
+                api.toast({
+                    msg: '没有网络',
+                    duration: 2000,
+                    location: 'top'
+                });
+                return;
+            }
+            $api.removeCls($api.byId('loading'),'aui-hide');
+            api.ajax({
+		    	url: indexSetting.url+'api.php?appkey='+indexSetting.appkey+'&type=get&module=jingxuan&param=current----'+indexSetting.current,
+		    	method: 'get'
+			}, function(ret, err) {
+				if(ret){
+					if(ret.status && (indexSetting.total>=indexSetting.current)){
+		            	indexSetting.current +=1;
+		            	indexSetting.total = ret.total;
+		                var temp = $api.text($api.byId("indexlist-temp"));
+		                var dottemp = doT.template(temp);
+		                var html = dottemp(ret);
+		                $api.append($api.byId('indexlist'),html);
+		                $api.addCls($api.byId('loading'),'aui-hide');
+                        insertadv();
+                        insertrandombook();
+		            }else{
+		                $api.html($api.byId('loading'),'没有了');
+		            }
+				}else {
+		        	api.toast({
+					    msg: err.msg,
+					    duration: 2000,
+					    location: 'top'
+					});
+		    	}
+			});
+        }
+        indexSetting.loading = false;
+    });
+}
+    
+
+function closeTips(){
+    $api.addCls($api.byId('nonetwork'),'aui-hide');
+}
+//  初始化 
+    function initload(){
+        if(api.connectionType == 'none'){
+            var cache = $api.getStorage('jingxuan');
+            if(cache && cache.time > 0){
+                loadflash(cache.cache.flash);
+                var temp = $api.text($api.byId("main-temp"));
+                var dottemp = doT.template(temp);
+                var html = dottemp(cache.cache);
+                $api.html($api.byId('main'),html);
+            }
+            api.toast({
+                msg: '没有网络',
+                duration: 2000,
+                location: 'top'
+            });
+            indexSetting.activity.closeKeyFrame();
+            return;
+        }
+    	api.ajax({
+		    url: indexSetting.url+'api.php?appkey='+indexSetting.appkey+'&type=get&module=index',
+		    method: 'get'
+		}, function(ret, err) {
+		    if (ret) {
+                indexSetting.current = 1;
+                indexSetting.total = 2;
+                $api.setStorage('jingxuan',{cache:ret,time:(new Date().getTime())});
+                loadflash(ret.flash);
+                var temp = $api.text($api.byId("main-temp"));
+                var dottemp = doT.template(temp);
+                var html = dottemp(ret);
+                $api.html($api.byId('main'),html);
+		        indexSetting.activity.closeKeyFrame();
+                insertadv();
+                insertrandombook();
+            } else {
+                api.toast({
+                    msg: err.msg,
+                    duration: 2000,
+                    location: 'top'
+                });
+                indexSetting.activity.closeKeyFrame();
+            }
+        });
+    }
+function insertadv(){
+    api.ajax({
+        url: indexSetting.url+'api.php?appkey='+indexSetting.appkey+'&type=get&module=adv',
+        method: 'get'
+    }, function(ret, err) {
+        if (ret.adv) {
+            indexSetting.advlength = ret.adv.length;
+            var booklistadv = $api.byId('booklistadv_'+indexSetting.current);
+            var img = '<div class="aui-content-padded"><p class="advtitle aui-font-size-14">'+ret.adv[indexSetting.startindex].adv+'</p><img  onclick="openwebpage(\''+ret.adv[indexSetting.startindex].url+'\',\''+ret.adv[indexSetting.startindex].adv+'\')" src="'+ret.adv[indexSetting.startindex].image+'" ></div>';
+            $api.html(booklistadv,img);
+            setTimeout(function(){
+                $api.removeCls(booklistadv,'aui-hide');
+            },100);
+            if(indexSetting.startindex < (indexSetting.advlength - 1)){
+                indexSetting.startindex++;
+            }else{
+                indexSetting.startindex = 0;
+            }
+        }
+    });
+}
+function insertrandombook(){
+    api.ajax({
+        url: indexSetting.url+'api.php?appkey='+indexSetting.appkey+'&type=get&module=hyih',
+        method: 'get'
+    }, function(ret, err) {
+        if (ret.books.length) {
+            var randombook = $api.byId('randombook_'+indexSetting.current);
+            var temp = $api.text($api.byId("huanyihuan-temp"));
+            var dottemp = doT.template(temp);
+            var html = dottemp(ret);
+            $api.html(randombook,html);
+            setTimeout(function(){
+                $api.removeCls(randombook,'aui-hide');
+            },100);
+        }
+    });
+}
+function loadflash(flash){
+    for(var i=0,len=flash.images.length;i<len;i++){
+        if(!/^http/.test(flash.images[i])){
+            flash.images[i] = indexSetting.url+'../'+flash.images[i];
+        }
+        if(!/^http/.test(flash.url[i])){
+            flash.url[i] = indexSetting.url+'../'+flash.url[i];
+        }
+    }
+    var UIScrollPicture = api.require('UIScrollPicture');
+    UIScrollPicture.open({
+        rect: {
+            x: 0,
+            y: indexSetting.statbar,
+            w: api.winWidth,
+            h: 180
+        },
+        data: {
+            paths: flash.images,
+            captions: flash.title
+        },
+        styles: {
+            caption: {
+                height: 35,
+                color: '#E0FFFF',
+                size: 13,
+                bgColor: 'rgba(0,0,0,.5)',
+                position: 'overlay'
+            },
+            indicator: {
+                align: 'center',
+                color: '#FFFFFF',
+                activeColor: '#DA70D6'
+            }
+        },
+        placeholderImg: 'widget://image/api_31.png',
+        contentMode: 'scaleToFill',
+        interval: 5,
+        fixedOn: api.frameName,
+        loop: true,
+        fixed: false
+    }, function(ret, err){
+        if( ret ){
+            if(ret.eventType == 'click'){
+               openwebpage(flash.url[ret.index],flash.title[ret.index])
+            }
+        }else{
+            alert(err.msg);
+        }
+    });
+}
+</script>
+</html>
