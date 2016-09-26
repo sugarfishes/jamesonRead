@@ -21,7 +21,7 @@
 
 <http://demo.jameson512.com/xifeng/7.png> "发现界面"
 
-#使用方法
+# [使用方法](http://www.kancloud.cn/yuan1314/xifeng)
 
 -	基于apicloud开发，请同步至你的apicloud工程后编译
 -	ajax请求，返回json数据
